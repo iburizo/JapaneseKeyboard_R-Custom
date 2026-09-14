@@ -65,6 +65,141 @@ class FastInputMatrixInstrumentedTest {
         get() = instrumentation.uiAutomation
 
     @Test
+    fun englishSpaceFlickCommitsExpectedWidthOnNormalAndFloatingPhysicalKeyboard() {
+        runPhysicalDeviceSession("english-space-flick") { session ->
+            rotateAndVerify(TestOrientation.PORTRAIT)
+            applyCasePreferences(session.preferences, TestCase(
+                keyboard = TestKeyboard.QWERTY,
+                columns = 1,
+                candidateTabVisible = false,
+                toolbarVisible = false,
+                toolbarIntegrated = false,
+                orientation = TestOrientation.PORTRAIT,
+            ))
+            for (floating in listOf(false, true)) {
+                for (direct in listOf(false, true)) {
+                    check(session.preferences.edit()
+                        .putBoolean("keyboard_floating_preference", floating)
+                        .putBoolean("qwerty_english_space_flick_preference", true)
+                        .putBoolean("qwerty_romaji_space_flick_preference", false)
+                        .putBoolean("qwerty_romaji_zenkaku_space_preference", true)
+                        .putBoolean("qwerty_english_direct_input_preference", direct)
+                        .putBoolean("qwerty_enable_flick_up_preference", false)
+                        .putInt("long_press_timeout_preference", 1000)
+                        .commit())
+                    val scenario = launchHost(session.context)
+                    try {
+                        ensureTargetImeSelected(session)
+                        restartInput(scenario)
+                        SystemClock.sleep(IME_LAYOUT_SETTLE_MS)
+                        fun tap(id: String) {
+                            assertTrue(injectTap(awaitVisibleNodeBounds(id).center))
+                        }
+                        fun flickSpace() {
+                            val bounds = awaitVisibleNodeBounds("key_space")
+                            assertTrue(injectFlick(bounds.center,
+                                PointF(bounds.center.x, bounds.center.y - bounds.height * 1.5f)))
+                        }
+                        fun assertCommitted(expected: String) {
+                            assertEquals(expected, awaitTextSettled(scenario))
+                            scenario.onActivity {
+                                assertEquals(-1, android.view.inputmethod.BaseInputConnection
+                                    .getComposingSpanStart(it.editText.text))
+                                assertEquals(expected.length, it.editText.selectionStart)
+                            }
+                        }
+                        val token = "floating-$floating-direct-$direct"
+                        assertEquals("", awaitTextSettled(scenario))
+                        scenario.onActivity {
+                            assertEquals(-1, android.view.inputmethod.BaseInputConnection
+                                .getComposingSpanStart(it.editText.text))
+                        }
+                        assertTrue("Expected no candidates before empty-space test", findCandidateState().texts.isEmpty())
+                        flickSpace()
+                        assertCommitted("\u3000")
+                        saveScreenshot(session, "$token-empty-full-width")
+                        tap("key_space")
+                        assertCommitted("\u3000 ")
+                        sendProgress("SPACE_VERIFIED $token empty flick=U+3000 tap=U+0020 no-composition no-candidates\n")
+
+                        restartInput(scenario)
+                        SystemClock.sleep(IME_LAYOUT_SETTLE_MS)
+                        "hello".forEach { tap("key_$it") }
+                        val before = awaitTextSettled(scenario)
+                        assertEquals("hello", before.lowercase())
+                        scenario.onActivity {
+                            val start = android.view.inputmethod.BaseInputConnection
+                                .getComposingSpanStart(it.editText.text)
+                            if (direct) assertEquals(-1, start) else assertTrue(start >= 0)
+                        }
+                        val candidates = findCandidateState().texts
+                        flickSpace()
+                        assertCommitted(before + "\u3000")
+                        saveScreenshot(session, "$token-text-full-width")
+                        sendProgress("SPACE_VERIFIED $token text=$before flick=U+3000 composing-before=${!direct} candidates=$candidates committed=true\n")
+                    } finally {
+                        scenario.close()
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun bunsetsuConversionOnNormalAndFloatingSoftwareKeyboards() {
+        runPhysicalDeviceSession("bunsetsu-software") { session ->
+            for (floating in listOf(false, true)) {
+                check(session.preferences.edit()
+                    .putString("keyboard_order_preference", "[\"ROMAJI\",\"TENKEY\",\"QWERTY\",\"GOJUON\",\"SUMIRE\"]")
+                    .putBoolean("save_last_used_keyboard", false)
+                    .putInt("save_last_used_keyboard_int", 0)
+                    .putBoolean("keyboard_floating_preference", floating)
+                    .putBoolean("qwerty_show_cursor_buttons_preference", true)
+                    .putBoolean("conversion_bunsetsu_separation_preference", true)
+                    .putBoolean("conversion_bunsetsu_cursor_move_preference", true)
+                    .putBoolean("live_conversion_preference", false)
+                    .putBoolean("candidate_order_override_enable_preference", false)
+                    .putBoolean("learn_dictionary_preference", false)
+                    .commit())
+                val scenario = launchHost(session.context)
+                try {
+                    ensureTargetImeSelected(session)
+                    restartInput(scenario)
+                    SystemClock.sleep(IME_LAYOUT_SETTLE_MS)
+                    fun tap(id: String) {
+                        assertTrue(injectTap(awaitVisibleNodeBounds(id).center))
+                        SystemClock.sleep(100)
+                    }
+                    "ashitahatoukyouniikimasu".forEach { tap("key_$it") }
+                    awaitEditorText(scenario) { it == "あしたはとうきょうにいきます" }
+                    tap("key_space")
+                    awaitEditorText(scenario) { it == "明日は東京に行きます" }
+                    val initial = readEditorDecoration(scenario)
+                    assertEquals(3, initial.underlines.size)
+                    saveScreenshot(session, "floating-$floating-initial")
+                    tap("cursor_right")
+                    val moved = readEditorDecoration(scenario)
+                    assertEquals(initial.text, moved.text)
+                    assertEquals(3, moved.backgrounds.single().start)
+                    assertEquals(6, moved.backgrounds.single().end)
+                    tap("key_space")
+                    awaitEditorText(scenario) { it != initial.text }
+                    val changed = readEditorDecoration(scenario).text
+                    assertTrue(changed.startsWith("明日は") && changed.endsWith("行きます"))
+                    saveScreenshot(session, "floating-$floating-second-candidate")
+                    tap("key_return")
+                    assertEquals(changed, readEditorDecoration(scenario).text)
+                    scenario.onActivity {
+                        assertEquals(-1, android.view.inputmethod.BaseInputConnection.getComposingSpanStart(it.editText.text))
+                    }
+                } finally {
+                    scenario.close()
+                }
+            }
+        }
+    }
+
+    @Test
     fun flickOnlyBackgroundDoesNotChangeAfterToggleTimeoutOnPhysicalDevice() {
         runPhysicalDeviceSession("flick-background-timeout") { session ->
             val scenario = launchHost(session.context)
