@@ -17,7 +17,9 @@ import com.kazumaproject.custom_keyboard.data.kanaRowStageOverrides
 import com.kazumaproject.custom_keyboard.view.TfbiFlickDirection
 
 internal object HierarchicalKanaDefaultDefinitions {
-    fun createFlickMaps(): Map<String, TfbiFlickNode.StatefulKey> = mapOf(
+    fun createFlickMaps(
+        uExtensionMode: String = "up_right"
+    ): Map<String, TfbiFlickNode.StatefulKey> = mapOf(
         "あ" to createStatefulKey(createHierarchicalARowKeyDefinition()),
         "か" to createStatefulKey(
             createHierarchicalKanaRowKeyDefinition(
@@ -27,7 +29,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 normal = KanaSeries("か", "き", "く", "け", "こ"),
                 diacritics = KanaRowDiacritics.Dakuten(
                     dakuten = KanaSeries("が", "ぎ", "ぐ", "げ", "ご")
-                )
+                ),
+                uExtensionMode = uExtensionMode
             )
         ),
         "さ" to createStatefulKey(
@@ -38,7 +41,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 normal = KanaSeries("さ", "し", "す", "せ", "そ"),
                 diacritics = KanaRowDiacritics.Dakuten(
                     dakuten = KanaSeries("ざ", "じ", "ず", "ぜ", "ぞ")
-                )
+                ),
+                uExtensionMode = uExtensionMode
             )
         ),
         "た" to createStatefulKey(
@@ -51,7 +55,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                     dakuten = KanaSeries("だ", "ぢ", "づ", "で", "ど")
                 ),
                 normalOverrides = createTaRowNormalOverrides(),
-                dakutenOverrides = createTaRowDakutenOverrides()
+                dakutenOverrides = createTaRowDakutenOverrides(),
+                uExtensionMode = uExtensionMode
             )
         ),
         "な" to createStatefulKey(
@@ -59,7 +64,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 id = "kana_na",
                 label = "な",
                 number = "5",
-                normal = KanaSeries("な", "に", "ぬ", "ね", "の")
+                normal = KanaSeries("な", "に", "ぬ", "ね", "の"),
+                uExtensionMode = uExtensionMode
             )
         ),
         "は" to createStatefulKey(
@@ -74,7 +80,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 ),
                 normalOverrides = createHaRowNormalOverrides(),
                 dakutenOverrides = createHaRowDakutenOverrides(),
-                handakutenOverrides = createHaRowHandakutenOverrides()
+                handakutenOverrides = createHaRowHandakutenOverrides(),
+                uExtensionMode = uExtensionMode
             )
         ),
         "ま" to createStatefulKey(
@@ -82,7 +89,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 id = "kana_ma",
                 label = "ま",
                 number = "7",
-                normal = KanaSeries("ま", "み", "む", "め", "も")
+                normal = KanaSeries("ま", "み", "む", "め", "も"),
+                uExtensionMode = uExtensionMode
             )
         ),
         "や" to createStatefulKey(createHierarchicalYaRowKeyDefinition()),
@@ -91,7 +99,8 @@ internal object HierarchicalKanaDefaultDefinitions {
                 id = "kana_ra",
                 label = "ら",
                 number = "9",
-                normal = KanaSeries("ら", "り", "る", "れ", "ろ")
+                normal = KanaSeries("ら", "り", "る", "れ", "ろ"),
+                uExtensionMode = uExtensionMode
             )
         ),
         "わ" to createStatefulKey(createHierarchicalWaRowKeyDefinition()),
@@ -110,7 +119,8 @@ internal object HierarchicalKanaDefaultDefinitions {
         diacritics: KanaRowDiacritics = KanaRowDiacritics.None,
         normalOverrides: KanaRowStageOverrides = KanaRowStageOverrides(),
         dakutenOverrides: KanaRowStageOverrides = KanaRowStageOverrides(),
-        handakutenOverrides: KanaRowStageOverrides = KanaRowStageOverrides()
+        handakutenOverrides: KanaRowStageOverrides = KanaRowStageOverrides(),
+        uExtensionMode: String = "up_right"
     ) = KanaRowFlickDefinitionGenerator.create(
         KanaRowSpec(
             id = id,
@@ -119,6 +129,7 @@ internal object HierarchicalKanaDefaultDefinitions {
             normal = normal,
             diacritics = diacritics,
             iColumnModeSwitchBoundary = ModeSwitchBoundary.I_COLUMN_DIACRITIC,
+            uExtensionMode = uExtensionMode,
             normalOverrides = normalOverrides,
             dakutenOverrides = dakutenOverrides,
             handakutenOverrides = handakutenOverrides

@@ -120,6 +120,12 @@ class TfbiStickyFlickController(
         popupPresentationMode = mode
     }
 
+    private var maxAngleDifference: Double = MAX_ANGLE_DIFFERENCE
+
+    fun setMaxAngleDifference(maxAngle: Double) {
+        maxAngleDifference = maxAngle.coerceIn(15.0, 70.0)
+    }
+
     fun setTfbiFlickStartPositionMode(mode: TfbiFlickStartPositionMode) {
         tfbiFlickStartPositionMode = mode
     }
@@ -511,12 +517,6 @@ class TfbiStickyFlickController(
             return TfbiFlickDirection.TAP
         }
 
-        if (popupPresentationMode == TfbiPopupPresentationMode.GUIDE_ABOVE_KEY) {
-            currentFingerPosition?.let { position ->
-                return resolveTfbiGuideGridDirection(position, enabledDirections)
-            }
-        }
-
         val centerAngles = mapOf(
             TfbiFlickDirection.RIGHT to 0.0,
             TfbiFlickDirection.DOWN_RIGHT to 35.0,
@@ -530,22 +530,37 @@ class TfbiStickyFlickController(
 
         val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
 
-        val closestDirectionData = enabledDirections.map { direction ->
-            val targetAngle =
-                if (direction == TfbiFlickDirection.LEFT && angle < 0) -180.0 else centerAngles[direction]!!
+        val candidateDirection = if (popupPresentationMode == TfbiPopupPresentationMode.GUIDE_ABOVE_KEY) {
+            currentFingerPosition?.let { position ->
+                resolveTfbiGuideGridDirection(position, enabledDirections)
+            } ?: TfbiFlickDirection.TAP
+        } else {
+            val closestDirectionData = enabledDirections.map { direction ->
+                val targetAngle =
+                    if (direction == TfbiFlickDirection.LEFT && angle < 0) -180.0 else centerAngles[direction]!!
 
-            var diff = abs(angle - targetAngle)
-            if (diff > 180) {
-                diff = 360 - diff
-            }
-            Pair(direction, diff)
-        }.minByOrNull { it.second }
+                var diff = abs(angle - targetAngle)
+                if (diff > 180) {
+                    diff = 360 - diff
+                }
+                Pair(direction, diff)
+            }.minByOrNull { it.second }
 
-        if (closestDirectionData == null || closestDirectionData.second > MAX_ANGLE_DIFFERENCE) {
-            return TfbiFlickDirection.TAP
+            closestDirectionData?.first ?: TfbiFlickDirection.TAP
         }
 
-        return closestDirectionData.first
+        if (candidateDirection == TfbiFlickDirection.TAP) return TfbiFlickDirection.TAP
+
+        val targetAngle = if (candidateDirection == TfbiFlickDirection.LEFT && angle < 0) -180.0 else centerAngles[candidateDirection]
+        if (targetAngle != null) {
+            var diff = abs(angle - targetAngle)
+            if (diff > 180) diff = 360 - diff
+            if (diff > maxAngleDifference) {
+                return TfbiFlickDirection.TAP
+            }
+        }
+
+        return candidateDirection
     }
 
     private fun isAnchorReady(keyAnchor: View, windowAnchor: View?): Boolean {

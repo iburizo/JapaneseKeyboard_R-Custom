@@ -158,19 +158,24 @@ object KeyboardDefaultLayouts {
      * @param dynamicKeyStates A map of dynamic key states [keyId: String, stateIndex: Int].
      * @return The final, state-applied KeyboardLayout.
      */
+    var uExtensionModeProvider: (() -> String)? = null
+    var twoStepFlickMaxAngleDifferenceProvider: (() -> Double)? = null
+    var hierarchicalFlickStageThresholdMultiplierProvider: (() -> Float)? = null
+
     fun createFinalLayout(
         mode: KeyboardInputMode,
         dynamicKeyStates: Map<String, Int>,
         inputLayoutType: String,
         inputStyle: String,
-        deleteKeyFlickSettings: DeleteKeyFlickSettings = DeleteKeyFlickSettings()
+        deleteKeyFlickSettings: DeleteKeyFlickSettings = DeleteKeyFlickSettings(),
+        uExtensionMode: String = uExtensionModeProvider?.invoke() ?: "up_right"
     ): KeyboardLayout {
         val baseLayout = when (inputLayoutType) {
             "toggle" -> {
                 when (mode) {
                     KeyboardInputMode.HIRAGANA -> {
                         createHiraganaToggleLayout(
-                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings
+                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings, uExtensionMode = uExtensionMode
                         )
                     }
 
@@ -194,7 +199,7 @@ object KeyboardDefaultLayouts {
                 when (mode) {
                     KeyboardInputMode.HIRAGANA -> {
                         createHiraganaFlickLayout(
-                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings
+                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings, uExtensionMode = uExtensionMode
                         )
                     }
 
@@ -218,7 +223,7 @@ object KeyboardDefaultLayouts {
                 when (mode) {
                     KeyboardInputMode.HIRAGANA -> {
                         createHiraganaEffectiveLayout(
-                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings
+                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings, uExtensionMode = uExtensionMode
                         )
                     }
 
@@ -242,7 +247,7 @@ object KeyboardDefaultLayouts {
                 when (mode) {
                     KeyboardInputMode.HIRAGANA -> {
                         createHiraganaToggleLayout(
-                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings
+                            inputStyle, deleteKeyFlickSettings = deleteKeyFlickSettings, uExtensionMode = uExtensionMode
                         )
                     }
 
@@ -564,7 +569,9 @@ object KeyboardDefaultLayouts {
     }
 
     private fun createHiraganaLayoutToggle(
-        deleteKeyFlickSettings: DeleteKeyFlickSettings, keys: List<KeyData>
+        deleteKeyFlickSettings: DeleteKeyFlickSettings,
+        keys: List<KeyData>,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
 
         val pasteActionMap = mapOf(
@@ -853,7 +860,9 @@ object KeyboardDefaultLayouts {
 
 
     private fun createHiraganaLayoutFlick(
-        deleteKeyFlickSettings: DeleteKeyFlickSettings, keys: List<KeyData>
+        deleteKeyFlickSettings: DeleteKeyFlickSettings,
+        keys: List<KeyData>,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
 
         val cursorMoveActionMap = mapOf(
@@ -3981,7 +3990,8 @@ object KeyboardDefaultLayouts {
     }
 
     fun createFlickKanaTemplateLayout(
-        isDefaultKey: Boolean
+        isDefaultKey: Boolean,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
         val keys = listOf(
             KeyData(
@@ -4948,7 +4958,9 @@ object KeyboardDefaultLayouts {
     }
 
     private fun createHiraganaToggleLayout(
-        inputStyle: String, deleteKeyFlickSettings: DeleteKeyFlickSettings
+        inputStyle: String,
+        deleteKeyFlickSettings: DeleteKeyFlickSettings,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
         val keys = listOf(
             KeyData(
@@ -5638,7 +5650,7 @@ object KeyboardDefaultLayouts {
                     flickMaps.put(label, listOf(conversionActionMap))
                 }
 
-                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps()
+                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps(uExtensionMode)
 
                 return KeyboardLayout(
                     keys, flickMaps, 5, 4, hierarchicalFlickMaps = hierarchicalFlickMaps
@@ -5647,7 +5659,7 @@ object KeyboardDefaultLayouts {
 
             "sumire" -> {
                 return createHiraganaLayoutToggle(
-                    deleteKeyFlickSettings = deleteKeyFlickSettings, keys = keys
+                    deleteKeyFlickSettings = deleteKeyFlickSettings, keys = keys, uExtensionMode = uExtensionMode
                 )
             }
 
@@ -6627,7 +6639,9 @@ object KeyboardDefaultLayouts {
     }
 
     private fun createHiraganaFlickLayout(
-        inputStyle: String, deleteKeyFlickSettings: DeleteKeyFlickSettings
+        inputStyle: String,
+        deleteKeyFlickSettings: DeleteKeyFlickSettings,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
         val keys = listOf(
             KeyData(
@@ -7300,7 +7314,7 @@ object KeyboardDefaultLayouts {
                     flickMaps.put(label, listOf(conversionActionMap))
                 }
 
-                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps()
+                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps(uExtensionMode)
 
                 return KeyboardLayout(
                     keys, flickMaps, 5, 4, hierarchicalFlickMaps = hierarchicalFlickMaps
@@ -7309,7 +7323,7 @@ object KeyboardDefaultLayouts {
 
             "sumire" -> {
                 return createHiraganaLayoutFlick(
-                    deleteKeyFlickSettings = deleteKeyFlickSettings, keys = keys
+                    deleteKeyFlickSettings = deleteKeyFlickSettings, keys = keys, uExtensionMode = uExtensionMode
                 )
             }
 
@@ -8636,7 +8650,9 @@ object KeyboardDefaultLayouts {
     }
 
     private fun createHiraganaEffectiveLayout(
-        inputStyle: String, deleteKeyFlickSettings: DeleteKeyFlickSettings
+        inputStyle: String,
+        deleteKeyFlickSettings: DeleteKeyFlickSettings,
+        uExtensionMode: String = "up_right"
     ): KeyboardLayout {
         val keys = listOf(
             KeyData(
@@ -9353,7 +9369,7 @@ object KeyboardDefaultLayouts {
                     flickMaps.put(label, listOf(conversionActionMap))
                 }
 
-                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps()
+                val hierarchicalFlickMaps = HierarchicalKanaDefaultDefinitions.createFlickMaps(uExtensionMode)
 
                 return KeyboardLayout(
                     keys, flickMaps, 5, 4, hierarchicalFlickMaps = hierarchicalFlickMaps

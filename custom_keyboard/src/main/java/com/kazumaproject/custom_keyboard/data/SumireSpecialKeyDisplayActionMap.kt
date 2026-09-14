@@ -26,7 +26,11 @@ fun buildSumireSpecialKeyDisplayActionMap(
         if (flickDirection in displayMap) return@forEach
         when (val resolved = resolve(keyData, sumireDirection)) {
             is ResolvedSumireSpecialKeyAction.Action -> {
-                displayMap[flickDirection] = FlickAction.Action(resolved.action)
+                val icon = KeyActionMapper.iconResIdForAction(resolved.action)
+                displayMap[flickDirection] = FlickAction.Action(
+                    action = resolved.action,
+                    drawableResId = icon
+                )
             }
 
             is ResolvedSumireSpecialKeyAction.InputText -> {

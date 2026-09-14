@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- 小さい「っ」のベクターパス -->
+    <path
+        android:fillColor="@color/keyboard_icon_color"
+        android:pathData="M 38,32 C 55,30 68,34 72,42 C 75,48 72,55 64,60 C 52,68 35,68 30,68 C 28,68 26,66 26,64 C 26,62 28,60 31,60 C 37,60 51,60 60,53 C 65,51 67,46 65,42 C 62,37 52,36 38,38 Z"
+        android:strokeColor="@color/keyboard_icon_color"
+        android:strokeWidth="1.5"/>
+</vector>

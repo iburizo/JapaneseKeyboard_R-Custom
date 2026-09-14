@@ -18,6 +18,12 @@
     <string name="utility_angle_degrees">Degrees</string>
     <string name="utility_angle_radians">Radians</string>
     <string name="utility_region_japan">Japan</string>
+    <string name="two_step_flick_max_angle_title">2nd-Step Flick Max Angle Tolerance</string>
+    <string name="two_step_flick_max_angle_summary">Adjust the recognition angle range for 2nd-step fllicks to prevent accidental triggers.</string>
+    <string name="hierarchical_flick_stage_threshold_title">3-Step Flick 2nd-Stage Mis-trigger Prevention</string>
+    <string name="hierarchical_flick_stage_threshold_summary">Adjusts the required slide distance for 2nd/3rd stages to prevent accidental triggers.</string>
+    <string name="sumire_u_extension_mode_title">Sumire \'u\' Auto Completion</string>
+    <string name="sumire_u_extension_mode_dialog_title">Direction for \'u\' Auto Completion</string>
     <string name="utility_region_us">United States</string>
     <string name="utility_region_uk">United Kingdom</string>
     <string name="utility_precision_auto">Automatic</string>

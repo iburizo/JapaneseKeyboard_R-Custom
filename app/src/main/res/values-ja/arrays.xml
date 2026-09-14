@@ -198,6 +198,18 @@
         <item>gpu_if_available</item>
     </string-array>
 
+    <string-array name="sumire_u_extension_mode_options">
+        <item>右上 (デフォルト)</item>
+        <item>右</item>
+        <item>オフ (2段目の「う」補完を無効化)</item>
+    </string-array>
+
+    <string-array name="sumire_u_extension_mode_values">
+        <item>up_right</item>
+        <item>right</item>
+        <item>off</item>
+    </string-array>
+
     <string-array name="gemma_translation_target_language_entries">
         <item>@string/gemma_translation_language_english</item>
         <item>@string/gemma_translation_language_japanese</item>

@@ -465,6 +465,24 @@ class FlickKeyboardView @JvmOverloads constructor(
         circularFlickDirectionCount = directionCount.coerceIn(4, 7)
     }
 
+    private var twoStepFlickMaxAngleDifference: Double = 70.0
+
+    fun setTwoStepFlickMaxAngleDifference(maxAngle: Double) {
+        twoStepFlickMaxAngleDifference = maxAngle.coerceIn(15.0, 70.0)
+        tfbiControllers.forEach {
+            it.setMaxAngleDifference(twoStepFlickMaxAngleDifference)
+        }
+    }
+
+    private var hierarchicalFlickStageThresholdMultiplier: Float = 1.0f
+
+    fun setHierarchicalFlickStageThresholdMultiplier(multiplier: Float) {
+        hierarchicalFlickStageThresholdMultiplier = multiplier.coerceIn(1.0f, 3.0f)
+        hierarchicalTfbiControllers.forEach {
+            it.setStageFlickThresholdMultiplier(hierarchicalFlickStageThresholdMultiplier)
+        }
+    }
+
     fun setHierarchicalFlickModeSwitchAngleMargin(margin: Double) {
         hierarchicalFlickModeSwitchAngleMargin = margin.coerceIn(0.0, 34.0)
         hierarchicalTfbiControllers.forEach {
@@ -618,6 +636,9 @@ class FlickKeyboardView @JvmOverloads constructor(
             return
         }
         Log.d("FlickKeyboardView", "setKeyboard (Full Rebuild)")
+        com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.twoStepFlickMaxAngleDifferenceProvider?.invoke()?.let {
+            setTwoStepFlickMaxAngleDifference(it)
+        }
 
         doubleTapActionDispatcher.cancel()
         cancelTrackedTouchState()
@@ -2328,6 +2349,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                         context = context,
                         gestureConfigSource = gestureSessionConfigSource
                     ).apply {
+                        setMaxAngleDifference(twoStepFlickMaxAngleDifference)
                         setPopupWindowAnchorProvider(popupWindowAnchorProvider)
                         setPopupPresentationMode(tfbiPopupPresentationMode)
                         setTfbiFlickStartPositionMode(tfbiFlickStartPositionMode)
@@ -2575,6 +2597,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                         setTfbiFlickStartPositionMode(tfbiFlickStartPositionMode)
                         setInputTextTransform(::transformInputTextForDisplay)
                         setModeSwitchAngleMargin(hierarchicalFlickModeSwitchAngleMargin)
+                        setStageFlickThresholdMultiplier(hierarchicalFlickStageThresholdMultiplier)
                         applyPopupViewStyle(popupViewStyleSet.tfbi)
                         this.listener = object : TfbiHierarchicalFlickController.TfbiListener {
                             override fun onPress(character: String) {

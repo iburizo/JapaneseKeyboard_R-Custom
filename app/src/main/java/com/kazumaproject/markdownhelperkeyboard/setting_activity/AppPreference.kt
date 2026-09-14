@@ -57,6 +57,8 @@ object AppPreference {
     const val UTILITY_CALCULATION_PRECISION_KEY = "utility_calculation_precision"
     const val UTILITY_REGIONAL_PROFILE_KEY = "utility_regional_profile"
     const val UTILITY_UNIT_TARGETS_JSON_KEY = "utility_unit_targets_json"
+    const val SUMIRE_U_EXTENSION_MODE_KEY = "sumire_u_extension_mode_preference"
+    const val TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE_KEY = "two_step_flick_max_angle_difference_preference"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
 
     const val DEFAULT_CUSTOM_THEME_CANDIDATE_ITEM_BG_COLOR = 0x00000000
@@ -396,6 +398,12 @@ object AppPreference {
         Pair("sumire_restore_input_mode_only_within_time_preference", false)
     private val SUMIRE_RESTORE_INPUT_MODE_TIMEOUT_MINUTES_PREFERENCE =
         Pair("sumire_restore_input_mode_timeout_minutes_preference", 5)
+    private val SUMIRE_U_EXTENSION_MODE_PREFERENCE =
+        Pair(SUMIRE_U_EXTENSION_MODE_KEY, "up_right")
+    private val TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE =
+        Pair(TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE_KEY, 70)
+    private val HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER =
+        Pair("hierarchical_flick_stage_threshold_multiplier_preference", 100)
     private val SUMIRE_LAST_INPUT_MODE_PREFERENCE =
         Pair("sumire_last_input_mode_preference", "japanese")
     private val SUMIRE_LAST_INPUT_MODE_PRESENTATION_PREFERENCE =
@@ -1794,6 +1802,39 @@ object AppPreference {
                 HIERARCHICAL_FLICK_MODE_SWITCH_ANGLE_MARGIN.first,
                 value.coerceIn(0, 34)
             )
+        }
+
+    var hierarchical_flick_stage_threshold_multiplier_preference: Float
+        get() = (preferences.getInt(
+            HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER.first,
+            HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER.second
+        ).coerceIn(100, 250) / 100f)
+        set(value) = preferences.edit {
+            it.putInt(
+                HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER.first,
+                (value * 100).toInt().coerceIn(100, 250)
+            )
+        }
+
+    var two_step_flick_max_angle_difference_preference: Int
+        get() = preferences.getInt(
+            TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.first,
+            TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.second
+        ).coerceIn(15, 70)
+        set(value) = preferences.edit {
+            it.putInt(
+                TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.first,
+                value.coerceIn(15, 70)
+            )
+        }
+
+    var sumire_u_extension_mode_preference: String
+        get() = preferences.getString(
+            SUMIRE_U_EXTENSION_MODE_PREFERENCE.first,
+            SUMIRE_U_EXTENSION_MODE_PREFERENCE.second
+        ) ?: SUMIRE_U_EXTENSION_MODE_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(SUMIRE_U_EXTENSION_MODE_PREFERENCE.first, value)
         }
 
     var long_press_timeout_preference: Int?

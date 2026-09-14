@@ -37,6 +37,9 @@
     <string name="action_delete_until_symbol">Delete until symbols</string>
     <string name="action_delete_after_cursor">Delete after cursor to word/separator boundary</string>
     <string name="action_delete_after_cursor_one">Delete one character after cursor (Delete)</string>
+    <string name="action_delete_to_line_start">Delete to line start</string>
+    <string name="action_delete_all_left">Delete all text on the left</string>
+    <string name="action_sokuon">Sokuon (っ)</string>
     <string name="voice_input">Voice Input</string>
     <string name="action_switch_romaji_english">Romaji / English Switch</string>
 </resources>

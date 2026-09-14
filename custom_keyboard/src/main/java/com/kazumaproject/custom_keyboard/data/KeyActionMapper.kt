@@ -37,14 +37,14 @@ object KeyActionMapper {
                 com.kazumaproject.core.R.drawable.backspace_24px_until_symbol
             ),
             DisplayAction(
-                KeyAction.DeleteAfterCursorUntilSymbol,
-                context.getString(R.string.action_delete_after_cursor),
-                com.kazumaproject.core.R.drawable.backspace_24px_after_cursor
+                KeyAction.SelectAll,
+                context.getString(R.string.action_delete_all_left),
+                com.kazumaproject.core.R.drawable.backspace_24px
             ),
             DisplayAction(
-                KeyAction.DeleteAfterCursor,
-                context.getString(R.string.action_delete_after_cursor_one),
-                com.kazumaproject.core.R.drawable.backspace_24px_after_cursor
+                KeyAction.Text("っ"),
+                context.getString(R.string.action_sokuon),
+                com.kazumaproject.core.R.drawable.sokuon_icon
             ),
             DisplayAction(
                 KeyAction.Space,
@@ -231,6 +231,7 @@ object KeyActionMapper {
             KeyAction.SwitchToNumberLayout -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             KeyAction.ToggleKatakana -> com.kazumaproject.core.R.drawable.katakana
             KeyAction.VoiceInput -> com.kazumaproject.core.R.drawable.settings_voice_24px
+            is KeyAction.Text -> if (action.text == "っ") com.kazumaproject.core.R.drawable.sokuon_icon else null
             else -> null
         }
     }
@@ -334,6 +335,7 @@ object KeyActionMapper {
             "CapLockKey" -> KeyAction.CapLockKey
             "MoveCustomKeyboardTab" -> KeyAction.MoveCustomKeyboardTab
             "DeleteUntilSymbol" -> KeyAction.DeleteUntilSymbol
+            "DeleteAllLeft" -> KeyAction.SelectAll
             "DeleteAfterCursorUntilSymbol" -> KeyAction.DeleteAfterCursorUntilSymbol
             "DeleteAfterCursor" -> KeyAction.DeleteAfterCursor
             "SwitchKatakana" -> KeyAction.ToggleKatakana

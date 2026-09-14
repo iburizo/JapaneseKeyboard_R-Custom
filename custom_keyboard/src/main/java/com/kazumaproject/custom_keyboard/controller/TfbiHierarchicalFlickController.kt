@@ -172,6 +172,12 @@ class TfbiHierarchicalFlickController(
         tfbiFlickStartPositionMode = mode
     }
 
+    private var stageFlickThresholdMultiplier: Float = 1.0f
+
+    fun setStageFlickThresholdMultiplier(multiplier: Float) {
+        stageFlickThresholdMultiplier = multiplier.coerceIn(1.0f, 3.0f)
+    }
+
     fun setModeSwitchAngleMargin(margin: Double) {
         modeSwitchAngleMargin = margin.coerceIn(0.0, 34.0)
     }
@@ -385,6 +391,19 @@ class TfbiHierarchicalFlickController(
                 updateInternalState(node.triggersMode, event)
             }
             return // 変化なし
+        }
+
+        if (currentHighlight != TfbiFlickDirection.TAP) {
+            val currentAngle = centerAngle(currentHighlight)
+            val newAngle = centerAngle(direction)
+            if (currentAngle != null && newAngle != null) {
+                val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
+                val currentDiff = angleDifference(angle, currentAngle)
+                val newDiff = angleDifference(angle, newAngle)
+                if (newDiff + 25.0 > currentDiff) {
+                    return
+                }
+            }
         }
 
         // ハイライトを更新
@@ -897,7 +916,12 @@ class TfbiHierarchicalFlickController(
     }
 
     private fun currentFlickThreshold(): Float {
-        return currentGestureConfig().flickThresholdPx
+        val basePx = currentGestureConfig().flickThresholdPx
+        return if (mapStack.size > 1) {
+            basePx * stageFlickThresholdMultiplier
+        } else {
+            basePx
+        }
     }
 
     private fun currentGestureConfig(): GestureSessionConfig {

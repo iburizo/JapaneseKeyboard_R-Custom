@@ -26,6 +26,7 @@ data class KanaRowSpec(
     val normal: KanaSeries,
     val diacritics: KanaRowDiacritics = KanaRowDiacritics.None,
     val iColumnModeSwitchBoundary: ModeSwitchBoundary = ModeSwitchBoundary.NONE,
+    val uExtensionMode: String = "up_right",
     val normalOverrides: KanaRowStageOverrides = KanaRowStageOverrides(),
     val dakutenOverrides: KanaRowStageOverrides = KanaRowStageOverrides(),
     val handakutenOverrides: KanaRowStageOverrides = KanaRowStageOverrides()
@@ -189,7 +190,13 @@ object KanaRowFlickDefinitionGenerator {
             }
             spec.diacritics.handakuten?.let { handakuten ->
                 add(UP_RIGHT, input(handakuten.u, nextState = FlickKeyState.HANDAKUTEN))
-            } ?: add(UP_RIGHT, input("${spec.normal.u}う"))
+            } ?: run {
+                when (spec.uExtensionMode) {
+                    "right" -> add(RIGHT, input("${spec.normal.u}う"))
+                    "off" -> { /* 補完OFF */ }
+                    else -> add(UP_RIGHT, input("${spec.normal.u}う"))
+                }
+            }
             applyOverrides(spec.normalOverrides.uColumn)
         })
         add(RIGHT, branch(

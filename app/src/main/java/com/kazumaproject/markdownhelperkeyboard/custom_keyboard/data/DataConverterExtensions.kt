@@ -66,6 +66,7 @@ fun FlickMapping.toFlickAction(): FlickAction {
         "SwitchToEnglish" -> KeyAction.SwitchToEnglishLayout
         "SwitchToNumber" -> KeyAction.SwitchToNumberLayout
         "DeleteUntilSymbol" -> KeyAction.DeleteUntilSymbol
+        "DeleteAllLeft" -> KeyAction.SelectAll
         "DeleteAfterCursorUntilSymbol" -> KeyAction.DeleteAfterCursorUntilSymbol
         "DeleteAfterCursor" -> KeyAction.DeleteAfterCursor
         "UndoLastDelete" -> KeyAction.UndoLastDelete
@@ -124,6 +125,7 @@ fun CircularFlickMapping.toFlickAction(): FlickAction {
         "SwitchToEnglish" -> KeyAction.SwitchToEnglishLayout
         "SwitchToNumber" -> KeyAction.SwitchToNumberLayout
         "DeleteUntilSymbol" -> KeyAction.DeleteUntilSymbol
+        "DeleteAllLeft" -> KeyAction.SelectAll
         "DeleteAfterCursorUntilSymbol" -> KeyAction.DeleteAfterCursorUntilSymbol
         "DeleteAfterCursor" -> KeyAction.DeleteAfterCursor
         "UndoLastDelete" -> KeyAction.UndoLastDelete

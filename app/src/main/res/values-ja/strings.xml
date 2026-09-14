@@ -18,6 +18,8 @@
     <string name="utility_angle_degrees">度数法</string>
     <string name="utility_angle_radians">ラジアン</string>
     <string name="utility_region_japan">日本</string>
+    <string name="sumire_u_extension_mode_title">すみれ『う』自動入力 (長音補完)</string>
+    <string name="sumire_u_extension_mode_dialog_title">『う』自動入力の方向または無効化</string>
     <string name="utility_region_us">米国</string>
     <string name="utility_region_uk">英国</string>
     <string name="utility_precision_auto">自動</string>
@@ -1050,6 +1052,10 @@
     <string name="hierarchical_flick_angle_margin_reset">リセット</string>
     <string name="hierarchical_flick_angle_margin_result">%1$s</string>
     <string name="custom_border_width">枠線の太さ</string>
+    <string name="two_step_flick_max_angle_title">2段フリックの2段目許容角度 (誤爆防止)</string>
+    <string name="two_step_flick_max_angle_summary">2段目フリック（横・斜め）の判定角度幅を調整します。小さく設定すると横ブレ誤爆を防げます。</string>
+    <string name="hierarchical_flick_stage_threshold_title">3段フリックの2段目誤爆防止 (移動距離デッドゾーン)</string>
+    <string name="hierarchical_flick_stage_threshold_summary">2段目・3段目切り替えに必要なスライド距離倍率を設定します。大きく設定すると1段目フリック離し際の横ブレ誤爆を防げます。</string>
     <string name="qwerty_switch_number_key_without_number_preference_title">数字キーボード切り替え時の入力モード</string>
     <string name="qwerty_switch_number_key_without_number_preference_sumary">かなキーボード／スミレキーボードに切り替えるとき、数字キーボードではなく日本語入力モードに切り替えます。</string>
 

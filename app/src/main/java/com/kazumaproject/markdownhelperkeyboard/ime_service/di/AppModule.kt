@@ -269,6 +269,15 @@ object AppModule {
         return AppPreference.apply {
             init(context)
             migrateSumirePreferenceIfNeeded()
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.uExtensionModeProvider = {
+                sumire_u_extension_mode_preference
+            }
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.twoStepFlickMaxAngleDifferenceProvider = {
+                two_step_flick_max_angle_difference_preference.toDouble()
+            }
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.hierarchicalFlickStageThresholdMultiplierProvider = {
+                hierarchical_flick_stage_threshold_multiplier_preference
+            }
         }
     }
 

@@ -36,9 +36,13 @@ class SumireSpecialKeyActionEditorFragment :
     private val displayActions: List<DisplayAction> by lazy {
         KeyActionMapper.getDisplayActions(requireContext())
             .filter { displayAction ->
-                displayAction.action !is KeyAction.Text &&
-                        displayAction.action !is KeyAction.InputText &&
-                        KeyActionMapper.fromKeyAction(displayAction.action) != null
+                (displayAction.action !is KeyAction.Text &&
+                        displayAction.action !is KeyAction.InputText) ||
+                        displayAction.action == KeyAction.Text("っ") ||
+                        displayAction.action == KeyAction.InputText("っ")
+            }
+            .filter { displayAction ->
+                KeyActionMapper.fromKeyAction(displayAction.action) != null
             }
     }
     private val displayActionsByString: Map<String, DisplayAction> by lazy {
