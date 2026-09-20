@@ -58,7 +58,6 @@ object AppPreference {
     const val UTILITY_REGIONAL_PROFILE_KEY = "utility_regional_profile"
     const val UTILITY_UNIT_TARGETS_JSON_KEY = "utility_unit_targets_json"
     const val SUMIRE_U_EXTENSION_MODE_KEY = "sumire_u_extension_mode_preference"
-    const val TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE_KEY = "two_step_flick_max_angle_difference_preference"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
 
     const val DEFAULT_CUSTOM_THEME_CANDIDATE_ITEM_BG_COLOR = 0x00000000
@@ -262,6 +261,8 @@ object AppPreference {
         Pair("flick_guide_max_characters_preference", 1)
     private val HIERARCHICAL_FLICK_MODE_SWITCH_ANGLE_MARGIN =
         Pair("hierarchical_flick_mode_switch_angle_margin_preference", 20)
+    private val HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER =
+        Pair("hierarchical_flick_stage_threshold_multiplier_preference", 100)
 
     private val CUSTOM_KEYBOARD_TWO_WORDS_OUTPUTS =
         Pair("custom_keyboard_two_words_preference", true)
@@ -400,10 +401,6 @@ object AppPreference {
         Pair("sumire_restore_input_mode_timeout_minutes_preference", 5)
     private val SUMIRE_U_EXTENSION_MODE_PREFERENCE =
         Pair(SUMIRE_U_EXTENSION_MODE_KEY, "up_right")
-    private val TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE =
-        Pair(TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE_KEY, 70)
-    private val HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER =
-        Pair("hierarchical_flick_stage_threshold_multiplier_preference", 100)
     private val SUMIRE_LAST_INPUT_MODE_PREFERENCE =
         Pair("sumire_last_input_mode_preference", "japanese")
     private val SUMIRE_LAST_INPUT_MODE_PRESENTATION_PREFERENCE =
@@ -1813,18 +1810,6 @@ object AppPreference {
             it.putInt(
                 HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER.first,
                 (value * 100).toInt().coerceIn(100, 250)
-            )
-        }
-
-    var two_step_flick_max_angle_difference_preference: Int
-        get() = preferences.getInt(
-            TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.first,
-            TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.second
-        ).coerceIn(15, 70)
-        set(value) = preferences.edit {
-            it.putInt(
-                TWO_STEP_FLICK_MAX_ANGLE_DIFFERENCE.first,
-                value.coerceIn(15, 70)
             )
         }
 

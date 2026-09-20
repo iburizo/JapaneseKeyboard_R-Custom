@@ -127,11 +127,16 @@ class SumireSpecialKeyActionEditorFragment :
 
     private fun SumireSpecialKeyDirection.displayLabel(): String {
         return when (this) {
-            SumireSpecialKeyDirection.TAP -> "Tap"
-            SumireSpecialKeyDirection.UP -> "上フリック"
-            SumireSpecialKeyDirection.RIGHT -> "右フリック"
-            SumireSpecialKeyDirection.DOWN -> "下フリック"
-            SumireSpecialKeyDirection.LEFT -> "左フリック"
+            SumireSpecialKeyDirection.TAP -> "Tap (通常)"
+            SumireSpecialKeyDirection.UP -> "上フリック (通常)"
+            SumireSpecialKeyDirection.RIGHT -> "右フリック (通常)"
+            SumireSpecialKeyDirection.DOWN -> "下フリック (通常)"
+            SumireSpecialKeyDirection.LEFT -> "左フリック (通常)"
+            SumireSpecialKeyDirection.TAP_COMPOSING -> "Tap (入力中)"
+            SumireSpecialKeyDirection.UP_COMPOSING -> "上フリック (入力中)"
+            SumireSpecialKeyDirection.RIGHT_COMPOSING -> "右フリック (入力中)"
+            SumireSpecialKeyDirection.DOWN_COMPOSING -> "下フリック (入力中)"
+            SumireSpecialKeyDirection.LEFT_COMPOSING -> "左フリック (入力中)"
         }
     }
 
@@ -179,6 +184,11 @@ class SumireSpecialKeyActionEditorFragment :
             SumireSpecialKeyDirection.RIGHT -> getString(R.string.sumire_special_key_dialog_title_right)
             SumireSpecialKeyDirection.DOWN -> getString(R.string.sumire_special_key_dialog_title_down)
             SumireSpecialKeyDirection.LEFT -> getString(R.string.sumire_special_key_dialog_title_left)
+            SumireSpecialKeyDirection.TAP_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_tap) + " (入力中)"
+            SumireSpecialKeyDirection.UP_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_up) + " (入力中)"
+            SumireSpecialKeyDirection.RIGHT_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_right) + " (入力中)"
+            SumireSpecialKeyDirection.DOWN_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_down) + " (入力中)"
+            SumireSpecialKeyDirection.LEFT_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_left) + " (入力中)"
         }
     }
 

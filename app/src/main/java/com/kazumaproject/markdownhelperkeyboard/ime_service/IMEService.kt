@@ -13291,6 +13291,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         mainView: MainLayoutBinding,
         isFloatingView: Boolean
     ) {
+        flickView.isComposingActiveProvider = { inputString.value.isNotEmpty() }
         flickView.setOnFlickTextPreviewListener(sumireFlickTextPreviewListener)
         flickView.bindRuntimeGestureSettings(runtimeGestureSettingsSource)
         val tfbiPopupPresentationMode = appPreference.flick_tfbi_popup_presentation

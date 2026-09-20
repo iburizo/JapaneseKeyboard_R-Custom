@@ -22,6 +22,8 @@ fun buildSumireSpecialKeyDisplayActionMap(
     }.toMutableMap()
 
     SumireSpecialKeyDirection.entries.forEach { sumireDirection ->
+        if (sumireDirection.name.endsWith("_COMPOSING")) return@forEach
+
         val flickDirection = sumireDirection.toDisplayFlickDirection()
         if (flickDirection in displayMap) return@forEach
         when (val resolved = resolve(keyData, sumireDirection)) {
@@ -79,11 +81,11 @@ fun KeyData.applyTapOverrideDisplayForDynamicSumireSpecialKey(
 
 private fun SumireSpecialKeyDirection.toDisplayFlickDirection(): FlickDirection {
     return when (this) {
-        SumireSpecialKeyDirection.TAP -> FlickDirection.TAP
-        SumireSpecialKeyDirection.UP -> FlickDirection.UP
-        SumireSpecialKeyDirection.RIGHT -> FlickDirection.UP_RIGHT_FAR
-        SumireSpecialKeyDirection.DOWN -> FlickDirection.DOWN
-        SumireSpecialKeyDirection.LEFT -> FlickDirection.UP_LEFT_FAR
+        SumireSpecialKeyDirection.TAP, SumireSpecialKeyDirection.TAP_COMPOSING -> FlickDirection.TAP
+        SumireSpecialKeyDirection.UP, SumireSpecialKeyDirection.UP_COMPOSING -> FlickDirection.UP
+        SumireSpecialKeyDirection.RIGHT, SumireSpecialKeyDirection.RIGHT_COMPOSING -> FlickDirection.UP_RIGHT_FAR
+        SumireSpecialKeyDirection.DOWN, SumireSpecialKeyDirection.DOWN_COMPOSING -> FlickDirection.DOWN
+        SumireSpecialKeyDirection.LEFT, SumireSpecialKeyDirection.LEFT_COMPOSING -> FlickDirection.UP_LEFT_FAR
     }
 }
 

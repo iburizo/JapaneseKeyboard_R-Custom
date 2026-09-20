@@ -159,7 +159,6 @@ object KeyboardDefaultLayouts {
      * @return The final, state-applied KeyboardLayout.
      */
     var uExtensionModeProvider: (() -> String)? = null
-    var twoStepFlickMaxAngleDifferenceProvider: (() -> Double)? = null
     var hierarchicalFlickStageThresholdMultiplierProvider: (() -> Float)? = null
 
     fun createFinalLayout(

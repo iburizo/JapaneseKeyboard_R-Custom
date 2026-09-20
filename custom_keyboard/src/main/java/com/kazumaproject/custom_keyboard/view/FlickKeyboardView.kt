@@ -203,7 +203,9 @@ class FlickKeyboardView @JvmOverloads constructor(
             ((String, String, KeyData, SumireSpecialKeyDirection) -> ResolvedSumireSpecialKeyAction)? =
         null
     private var sumireSpecialKeyLayoutType: String? = null
-    private var sumireSpecialKeyInputMode: String? = null
+    var sumireSpecialKeyInputMode: String? = null
+
+    var isComposingActiveProvider: (() -> Boolean)? = null
 
     private data class KeyInfo(
         var view: View,
@@ -636,9 +638,6 @@ class FlickKeyboardView @JvmOverloads constructor(
             return
         }
         Log.d("FlickKeyboardView", "setKeyboard (Full Rebuild)")
-        com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.twoStepFlickMaxAngleDifferenceProvider?.invoke()?.let {
-            setTwoStepFlickMaxAngleDifference(it)
-        }
 
         doubleTapActionDispatcher.cancel()
         cancelTrackedTouchState()
@@ -1746,6 +1745,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                                     flickDirection = direction,
                                     fallbackAction = fallbackAction,
                                     isFlick = isFlick,
+                                    isComposing = isComposingActiveProvider?.invoke() == true,
                                     resolve = ::resolveSumireSpecialKeyOverride
                                 ) { dispatchedAction, actionIsFlick ->
                                     dispatchCommittedKeyAction(

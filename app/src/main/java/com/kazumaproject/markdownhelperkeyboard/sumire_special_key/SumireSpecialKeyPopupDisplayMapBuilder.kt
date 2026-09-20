@@ -51,15 +51,15 @@ object SumireSpecialKeyPopupDisplayMapBuilder {
         existingKeys: Set<FlickDirection>
     ): List<FlickDirection> {
         return when (this) {
-            SumireSpecialKeyDirection.TAP -> listOf(FlickDirection.TAP)
-            SumireSpecialKeyDirection.UP -> listOf(FlickDirection.UP)
-            SumireSpecialKeyDirection.RIGHT -> buildList {
+            SumireSpecialKeyDirection.TAP, SumireSpecialKeyDirection.TAP_COMPOSING -> listOf(FlickDirection.TAP)
+            SumireSpecialKeyDirection.UP, SumireSpecialKeyDirection.UP_COMPOSING -> listOf(FlickDirection.UP)
+            SumireSpecialKeyDirection.RIGHT, SumireSpecialKeyDirection.RIGHT_COMPOSING -> buildList {
                 add(FlickDirection.UP_RIGHT_FAR)
                 if (FlickDirection.UP_RIGHT in existingKeys) add(FlickDirection.UP_RIGHT)
             }
 
-            SumireSpecialKeyDirection.DOWN -> listOf(FlickDirection.DOWN)
-            SumireSpecialKeyDirection.LEFT -> buildList {
+            SumireSpecialKeyDirection.DOWN, SumireSpecialKeyDirection.DOWN_COMPOSING -> listOf(FlickDirection.DOWN)
+            SumireSpecialKeyDirection.LEFT, SumireSpecialKeyDirection.LEFT_COMPOSING -> buildList {
                 add(FlickDirection.UP_LEFT_FAR)
                 if (FlickDirection.UP_LEFT in existingKeys) add(FlickDirection.UP_LEFT)
             }

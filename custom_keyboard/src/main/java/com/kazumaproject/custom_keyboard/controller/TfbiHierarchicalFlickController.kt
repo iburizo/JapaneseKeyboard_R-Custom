@@ -94,6 +94,12 @@ class TfbiHierarchicalFlickController(
     // フリックの中心座標 (x, y) を保持するスタック
     private val centerStack = ArrayDeque<Pair<Float, Float>>()
 
+    // 各階層への進入座標 (x, y) を保持するスタック (相対角度計算に使用)
+    private val inflectionStack = ArrayDeque<Pair<Float, Float>>()
+
+    // 各スロット（DOWN_LEFTなど）に入った瞬間の座標を記録するマップ
+    private val slotEntryPositions = mutableMapOf<TfbiFlickDirection, Pair<Float, Float>>()
+
     // 表示するマップ (TfbiFlickNode) を保持するスタック
     private val mapStack = ArrayDeque<Map<TfbiFlickDirection, TfbiFlickNode>>()
 
@@ -260,6 +266,7 @@ class TfbiHierarchicalFlickController(
 
         // スタックにプッシュ
         centerStack.push(event.x to event.y)
+        inflectionStack.push(event.x to event.y)
         mapStack.push(rMap)
         highlightStack.push(TfbiFlickDirection.TAP)
         activeTfbiFlickStartPositionMode = tfbiFlickStartPositionMode
@@ -294,12 +301,19 @@ class TfbiHierarchicalFlickController(
         val dy = event.y - centerY
         val enabledDirections = effectiveStageMap(currentM).keys
 
+        val (inflectionX, inflectionY) = inflectionStack.peek() ?: (centerX to centerY)
+        val relativeDx = event.x - inflectionX
+        val relativeDy = event.y - inflectionY
+
         // 現在のフリック方向を計算
         val direction = calculateDirection(
-            dx,
-            dy,
-            currentFlickThreshold(),
-            enabledDirections
+            dx = dx,
+            dy = dy,
+            relativeDx = relativeDx,
+            relativeDy = relativeDy,
+            threshold = currentFlickThreshold(),
+            enabledDirections = enabledDirections,
+            currentMap = currentM
         )
 
         if (direction == TfbiFlickDirection.TAP) {
@@ -326,6 +340,7 @@ class TfbiHierarchicalFlickController(
                     // スタックを1段戻す
                     mapStack.pop()
                     highlightStack.pop()
+                    inflectionStack.pop()
 
                     // 親のマップとハイライト状態を復元
                     currentMap = mapStack.peek()
@@ -363,6 +378,26 @@ class TfbiHierarchicalFlickController(
         // じゃ／じゅ／じょの兄弟方向を継続候補として扱います。
         var selectionMap = currentM
         var node = currentM[direction]
+
+        if (mapStack.size > 1 && direction == TfbiFlickDirection.DOWN_LEFT) {
+            val angle = Math.toDegrees(kotlin.math.atan2(relativeDy.toDouble(), relativeDx.toDouble()))
+            if (angle in 60.0..115.0) {
+                val candidate = currentM[TfbiFlickDirection.DOWN]
+                if (candidate != null) {
+                    node = candidate
+                }
+            }
+        }
+
+        if (mapStack.size > 1 && direction == TfbiFlickDirection.UP_LEFT) {
+            val angle = Math.toDegrees(kotlin.math.atan2(relativeDy.toDouble(), relativeDx.toDouble()))
+            if (angle in -115.0..-60.0) {
+                val candidate = currentM[TfbiFlickDirection.UP]
+                if (candidate != null) {
+                    node = candidate
+                }
+            }
+        }
         if (node == null && parentContinuationNode(direction) != null) {
             popCurrentStageForParentContinuation()
             selectionMap = currentMap ?: return
@@ -455,11 +490,14 @@ class TfbiHierarchicalFlickController(
         notifySelectionChanged()
     }
 
+    private var slideExtendedNode: TfbiFlickNode.Input? = null
+
     private fun handleTouchUp(event: MotionEvent) {
         attachedView?.let { updateGuideFingerPosition(it, event) }
         val currentM = currentMap ?: return
         val finalDirection = currentHighlight
-        val node = currentM[finalDirection]
+        val node = slideExtendedNode ?: currentM[finalDirection]
+        slideExtendedNode = null
 
         var selectedNode: TfbiFlickNode.Input? = null
 
@@ -617,6 +655,7 @@ class TfbiHierarchicalFlickController(
                 if (nextNode is TfbiFlickNode.SubMenu) {
                     // 次の SubMenu マップへ
                     tempMap = nextNode.nextMap
+                    inflectionStack.push(event.x to event.y)
                 } else {
                     Log.e(
                         TAG,
@@ -892,9 +931,12 @@ class TfbiHierarchicalFlickController(
         popupWindow = null
         popupView = null
         centerStack.clear()
+        inflectionStack.clear()
+        slotEntryPositions.clear()
         mapStack.clear()
         highlightStack.clear()
         currentMap = null
+        slideExtendedNode = null
         currentHighlight = TfbiFlickDirection.TAP
         guideRootDirection = TfbiFlickDirection.TAP
         guideSelectedOption = null
@@ -931,8 +973,11 @@ class TfbiHierarchicalFlickController(
     private fun calculateDirection(
         dx: Float,
         dy: Float,
+        relativeDx: Float,
+        relativeDy: Float,
         threshold: Float,
-        enabledDirections: Set<TfbiFlickDirection>
+        enabledDirections: Set<TfbiFlickDirection>,
+        currentMap: Map<TfbiFlickDirection, TfbiFlickNode>
     ): TfbiFlickDirection {
         val config = currentGestureConfig()
         if (
@@ -949,39 +994,60 @@ class TfbiHierarchicalFlickController(
             return TfbiFlickDirection.TAP
         }
 
-        if (popupPresentationMode == TfbiPopupPresentationMode.GUIDE_ABOVE_KEY) {
+        val candidate = if (popupPresentationMode == TfbiPopupPresentationMode.GUIDE_ABOVE_KEY) {
             currentFingerPosition?.let { position ->
-                return resolveTfbiGuideGridDirection(position, enabledDirections)
+                resolveTfbiGuideGridDirection(position, enabledDirections)
+            } ?: TfbiFlickDirection.TAP
+        } else {
+            val centerAngles = mapOf(
+                TfbiFlickDirection.RIGHT to 0.0,
+                TfbiFlickDirection.DOWN_RIGHT to 35.0,
+                TfbiFlickDirection.DOWN to 90.0,
+                TfbiFlickDirection.DOWN_LEFT to 125.0,
+                TfbiFlickDirection.LEFT to 180.0,
+                TfbiFlickDirection.UP_LEFT to -125.0,
+                TfbiFlickDirection.UP to -90.0,
+                TfbiFlickDirection.UP_RIGHT to -35.0
+            )
+
+            val angleDx = if (mapStack.size > 1) relativeDx else dx
+            val angleDy = if (mapStack.size > 1) relativeDy else dy
+            val angle = Math.toDegrees(kotlin.math.atan2(angleDy.toDouble(), angleDx.toDouble()))
+
+            val closestDirectionData = enabledDirections.mapNotNull { direction ->
+                val targetAngle = centerAngles[direction] ?: return@mapNotNull null // TAP は除外
+                var diff = kotlin.math.abs(angle - targetAngle)
+                if (diff > 180) {
+                    diff = 360 - diff
+                }
+                Pair(direction, diff)
+            }.minByOrNull { it.second }
+
+            var cand = closestDirectionData?.first ?: TfbiFlickDirection.TAP
+            if (closestDirectionData != null && closestDirectionData.second > modeSwitchAngleMargin) {
+                cand = TfbiFlickDirection.TAP
+            }
+            cand
+        }
+
+        var resolvedCandidate = candidate
+        val angle = Math.toDegrees(kotlin.math.atan2(relativeDy.toDouble(), relativeDx.toDouble()))
+
+        if (mapStack.size > 1 && resolvedCandidate == TfbiFlickDirection.DOWN_LEFT) {
+            if (angle in 60.0..115.0) {
+                if (currentMap[TfbiFlickDirection.DOWN] != null) {
+                    resolvedCandidate = TfbiFlickDirection.DOWN
+                }
+            }
+        } else if (mapStack.size > 1 && resolvedCandidate == TfbiFlickDirection.UP_LEFT) {
+            if (angle in -115.0..-60.0) {
+                if (currentMap[TfbiFlickDirection.UP] != null) {
+                    resolvedCandidate = TfbiFlickDirection.UP
+                }
             }
         }
 
-        val centerAngles = mapOf(
-            TfbiFlickDirection.RIGHT to 0.0,
-            TfbiFlickDirection.DOWN_RIGHT to 35.0,
-            TfbiFlickDirection.DOWN to 90.0,
-            TfbiFlickDirection.DOWN_LEFT to 125.0,
-            TfbiFlickDirection.LEFT to 180.0,
-            TfbiFlickDirection.UP_LEFT to -125.0,
-            TfbiFlickDirection.UP to -90.0,
-            TfbiFlickDirection.UP_RIGHT to -35.0
-        )
-
-        val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
-
-        val closestDirectionData = enabledDirections.mapNotNull { direction ->
-            val targetAngle = centerAngles[direction] ?: return@mapNotNull null // TAP は除外
-            var diff = abs(angle - targetAngle)
-            if (diff > 180) {
-                diff = 360 - diff
-            }
-            Pair(direction, diff)
-        }.minByOrNull { it.second }
-
-        if (closestDirectionData == null || closestDirectionData.second > MAX_ANGLE_DIFFERENCE) {
-            return TfbiFlickDirection.TAP
-        }
-
-        return closestDirectionData.first
+        return resolvedCandidate
     }
 
     private fun isAnchorReady(keyAnchor: View, windowAnchor: View?): Boolean {
