@@ -352,6 +352,7 @@ object KanaRowFlickDefinitionGenerator {
             label = text,
             parentContinuationDirections = setOf(UP, RIGHT, DOWN)
         ) {
+            add(TAP, input(text))
             add(primaryDirection, input(text))
             add(longDirection, input("${text}う"))
         }

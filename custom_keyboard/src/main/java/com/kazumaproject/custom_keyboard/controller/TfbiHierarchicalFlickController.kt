@@ -378,26 +378,6 @@ class TfbiHierarchicalFlickController(
         // じゃ／じゅ／じょの兄弟方向を継続候補として扱います。
         var selectionMap = currentM
         var node = currentM[direction]
-
-        if (mapStack.size > 1 && direction == TfbiFlickDirection.DOWN_LEFT) {
-            val angle = Math.toDegrees(kotlin.math.atan2(relativeDy.toDouble(), relativeDx.toDouble()))
-            if (angle in 60.0..115.0) {
-                val candidate = currentM[TfbiFlickDirection.DOWN]
-                if (candidate != null) {
-                    node = candidate
-                }
-            }
-        }
-
-        if (mapStack.size > 1 && direction == TfbiFlickDirection.UP_LEFT) {
-            val angle = Math.toDegrees(kotlin.math.atan2(relativeDy.toDouble(), relativeDx.toDouble()))
-            if (angle in -115.0..-60.0) {
-                val candidate = currentM[TfbiFlickDirection.UP]
-                if (candidate != null) {
-                    node = candidate
-                }
-            }
-        }
         if (node == null && parentContinuationNode(direction) != null) {
             popCurrentStageForParentContinuation()
             selectionMap = currentMap ?: return
@@ -465,6 +445,7 @@ class TfbiHierarchicalFlickController(
 
                 mapStack.push(currentMap!!)
                 highlightStack.push(direction) // どの方向から来たかを記録
+                inflectionStack.push(event.x to event.y)
 
                 // ハイライトは開いた方向 (currentHighlight) を維持
                 // ただし、ジッターガードを有効にする
