@@ -3165,6 +3165,34 @@ class FlickKeyboardView @JvmOverloads constructor(
                         action = MotionEvent.ACTION_DOWN,
                         downTime = event.downTime
                     )
+
+                    val info = dynamicKeyMap.values.find { it.view == target.view } ?: keyInfos.find { it.view == target.view }
+                    val keyData = info?.keyData
+                    val keyAction = keyData?.action
+                    val isComposing = isComposingActiveProvider?.invoke() == true
+
+                    val hasComposingFlickOverride = if (isComposing && keyData?.isSpecialKey == true) {
+                        val directions = listOf(
+                            SumireSpecialKeyDirection.UP_COMPOSING,
+                            SumireSpecialKeyDirection.RIGHT_COMPOSING,
+                            SumireSpecialKeyDirection.DOWN_COMPOSING,
+                            SumireSpecialKeyDirection.LEFT_COMPOSING
+                        )
+                        directions.any { dir ->
+                            val resolved = resolveSumireSpecialKeyOverride(keyData, dir)
+                            resolved !is ResolvedSumireSpecialKeyAction.Default && resolved !is ResolvedSumireSpecialKeyAction.None
+                        }
+                    } else false
+
+                    if (!hasComposingFlickOverride && 
+                        (keyAction == KeyAction.MoveCursorLeft || 
+                        keyAction == KeyAction.MoveCursorRight || 
+                        keyAction == KeyAction.MoveCursorUp || 
+                        keyAction == KeyAction.MoveCursorDown)) {
+                        isCursorMode = true
+                        cursorInitialX = event.x
+                        cursorInitialY = event.y
+                    }
                 }
                 return true
             }
