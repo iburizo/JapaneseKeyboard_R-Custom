@@ -1372,6 +1372,8 @@
     <string name="keyboard_touch_effect_color_mode_random">Random on each touch</string>
     <string name="keyboard_touch_effect_color_mode_fixed">Fixed color</string>
     <string name="keyboard_touch_effect_color_mode_palette">Palette</string>
+    <string name="action_undo_commit_title">Undo Commit (Reconversion)</string>
+    <string name="action_commit_dial_numbers_title">Commit Dial Numbers (12345)</string>
     <string name="keyboard_touch_effect_color_mode_theme">Theme color</string>
     <string name="keyboard_touch_effect_color_title">Fixed Effect Color</string>
     <string name="keyboard_touch_effect_color_summary">Choose the color used when fixed color mode is selected.</string>

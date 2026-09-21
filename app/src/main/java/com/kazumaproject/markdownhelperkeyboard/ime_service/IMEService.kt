@@ -13596,6 +13596,18 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.VoiceInput -> {}
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
+                    KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
                     KeyAction.UndoLastDelete -> {}
                     KeyAction.SwitchRomajiEnglish -> {}
                     KeyAction.ForceNewLine -> {
@@ -13613,6 +13625,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.ForceHalfWidthSpace -> {}
                     KeyAction.ForceFullWidthSpace -> {}
                     KeyAction.DeleteAfterCursor -> {}
+                    KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
                 }
             }
@@ -13677,6 +13690,18 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.VoiceInput -> {}
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
+                    KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
                     KeyAction.UndoLastDelete -> {}
                     KeyAction.ForceNewLine -> {}
                     KeyAction.SwitchDirectMode -> {}
@@ -13694,6 +13719,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                             floatingKeyboardBinding.takeIf { isFloatingView })
                     }
                     KeyAction.DeleteAfterCursor -> {}
+                    KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
                 }
             }
@@ -13841,6 +13867,18 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.VoiceInput -> {}
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
+                    KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
                     KeyAction.UndoLastDelete -> {}
                     KeyAction.ForceNewLine -> {}
                     KeyAction.SwitchDirectMode -> {}
@@ -13849,6 +13887,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.ForceHalfWidthSpace -> {}
                     KeyAction.ForceFullWidthSpace -> {}
                     KeyAction.DeleteAfterCursor -> {}
+                    KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
                 }
             }
@@ -14052,6 +14091,18 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                         stopDeleteLongPress()
                     }
 
+                    KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
                     KeyAction.UndoLastDelete -> {
                         if (isDeleteDownFlickPreference == true) {
                             undoLastHistoryEntry()
@@ -14142,6 +14193,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     }
 
                     KeyAction.DeleteAfterCursor -> {}
+                    KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
                 }
             }
@@ -14641,6 +14693,18 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                         handleDeleteAfterCursor()
                     }
 
+                    KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
                     KeyAction.UndoLastDelete -> {
                         if (isDeleteDownFlickPreference == true) {
                             undoLastHistoryEntry()
@@ -15092,7 +15156,19 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             KeyAction.Backspace,
             KeyAction.DeleteUntilSymbol,
             KeyAction.DeleteAfterCursorUntilSymbol,
-            KeyAction.UndoLastDelete -> {
+            KeyAction.UndoCommit -> { performPendingReconversion() }
+                    KeyAction.CommitDialNumbers -> {
+                        val text = inputString.value
+                        if (text.isNotEmpty()) {
+                            val sb = StringBuilder()
+                            for (ch in text) {
+                                val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.toDialNumbers(ch.toString())
+                                if (converted != null) sb.append(converted) else sb.append(ch)
+                            }
+                            commitAndClearInput(sb.toString())
+                        }
+                    }
+                    KeyAction.UndoLastDelete -> {
                 stopDeleteLongPress()
             }
 

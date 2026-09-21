@@ -40,6 +40,8 @@
     <string name="action_delete_to_line_start">左側の文章を改行まで一括削除</string>
     <string name="action_delete_all_left">左側のテキストを全削除</string>
     <string name="action_sokuon">促音 (っ)</string>
+    <string name="action_undo_commit_title">確定戻し（確定キャンセル）</string>
+    <string name="action_commit_dial_numbers_title">ア段数字変換確定（12345）</string>
     <string name="voice_input">音声入力</string>
     <string name="action_switch_romaji_english">ローマ字、英語切り替え</string>
 </resources>

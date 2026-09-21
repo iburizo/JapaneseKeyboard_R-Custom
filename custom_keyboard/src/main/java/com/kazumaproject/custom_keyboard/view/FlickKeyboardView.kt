@@ -2757,7 +2757,25 @@ class FlickKeyboardView @JvmOverloads constructor(
 
     private fun dispatchNonTapActionWithoutPreviewCancel(action: KeyAction, isFlick: Boolean) {
         doubleTapActionDispatcher.interrupt()
-        listener?.onAction(action, isFlick)
+        when (action) {
+            KeyAction.UndoCommit -> {
+                val handler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.undoCommitHandler
+                if (handler != null) {
+                    handler.invoke()
+                } else {
+                    listener?.onAction(action, isFlick)
+                }
+            }
+            KeyAction.CommitDialNumbers -> {
+                val handler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.commitDialNumbersHandler
+                if (handler != null) {
+                    handler.invoke()
+                } else {
+                    listener?.onAction(action, isFlick)
+                }
+            }
+            else -> listener?.onAction(action, isFlick)
+        }
     }
 
     private fun dispatchResolvedSumireSpecialKeyAction(

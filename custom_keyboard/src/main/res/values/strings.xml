@@ -40,6 +40,8 @@
     <string name="action_delete_to_line_start">Delete to line start</string>
     <string name="action_delete_all_left">Delete all text on the left</string>
     <string name="action_sokuon">Sokuon (っ)</string>
+    <string name="action_undo_commit_title">Undo Commit (Reconversion)</string>
+    <string name="action_commit_dial_numbers_title">Commit Dial Numbers (12345)</string>
     <string name="voice_input">Voice Input</string>
     <string name="action_switch_romaji_english">Romaji / English Switch</string>
 </resources>

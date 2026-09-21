@@ -164,6 +164,8 @@ object KeyboardDefaultLayouts {
     var onSelectionDeleteSwipeStartHandler: (() -> Unit)? = null
     var onSelectionDeleteSwipeUpdateHandler: ((Int, Int) -> Unit)? = null
     var onSelectionDeleteSwipeEndHandler: (() -> Unit)? = null
+    var undoCommitHandler: (() -> Unit)? = null
+    var commitDialNumbersHandler: (() -> Unit)? = null
 
     fun createFinalLayout(
         mode: KeyboardInputMode,

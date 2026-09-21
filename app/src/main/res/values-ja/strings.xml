@@ -1323,6 +1323,8 @@
     <string name="keyboard_touch_effect_color_mode_random">タッチごとにランダム</string>
     <string name="keyboard_touch_effect_color_mode_fixed">指定色</string>
     <string name="keyboard_touch_effect_color_mode_palette">パレット</string>
+    <string name="action_undo_commit_title">確定戻し（確定キャンセル）</string>
+    <string name="action_commit_dial_numbers_title">ア段数字変換確定（12345）</string>
     <string name="keyboard_touch_effect_color_mode_theme">テーマ色</string>
     <string name="keyboard_touch_effect_color_title">エフェクトの指定色</string>
     <string name="keyboard_touch_effect_color_summary">指定色モードで使用するエフェクト色を選択します。</string>
