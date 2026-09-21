@@ -6,7 +6,8 @@ object DialTimeDateConverter {
 
     private val A_DAN_MAP = mapOf(
         'あ' to '1', 'か' to '2', 'さ' to '3', 'た' to '4', 'な' to '5',
-        'は' to '6', 'ま' to '7', 'や' to '8', 'ら' to '9', 'わ' to '0'
+        'は' to '6', 'ま' to '7', 'や' to '8', 'ら' to '9', 'わ' to '0',
+        '、' to ',', '。' to '.'
     )
 
     fun toDialNumbers(text: String): String? {
@@ -20,46 +21,49 @@ object DialTimeDateConverter {
     }
 
     fun generateCandidates(rawInput: String): List<String> {
-        val numbers = toDialNumbers(rawInput) ?: return emptyList()
         val candidates = linkedSetOf<String>()
-        candidates.add(numbers)
+        val calculationResult = evaluateExpression(rawInput)
+        if (calculationResult != null) {
+            candidates.add(calculationResult)
+        }
 
-        when (numbers.length) {
-            2 -> {
-                val val2 = numbers.toIntOrNull() ?: return emptyList()
-                // 1. 正時・日（例: 12 -> 12:00, 12時, 12日）
-                if (val2 in 0..23) {
-                    candidates.add("$val2:00")
-                    candidates.add("${val2}時")
+        val numbers = toDialNumbers(rawInput)
+        if (numbers != null) {
+            candidates.add(numbers)
+
+            when (numbers.length) {
+                2 -> {
+                    val val2 = numbers.toIntOrNull() ?: return candidates.toList()
+                    if (val2 in 0..23) {
+                        candidates.add("$val2:00")
+                        candidates.add("${val2}時")
+                    }
+                    if (val2 in 1..31) {
+                        candidates.add("${val2}日")
+                    }
+
+                    val d1 = numbers.substring(0, 1).toInt()
+                    val d2 = numbers.substring(1, 2).toInt()
+                    addTime(candidates, d1, d2)
+                    addDate(candidates, d1, d2)
                 }
-                if (val2 in 1..31) {
-                    candidates.add("${val2}日")
+                3 -> {
+                    val h1 = numbers.substring(0, 1).toInt()
+                    val m1 = numbers.substring(1, 3).toInt()
+                    addTime(candidates, h1, m1)
+                    addDate(candidates, h1, m1)
+
+                    val h2 = numbers.substring(0, 2).toInt()
+                    val m2 = numbers.substring(2, 3).toInt()
+                    addTime(candidates, h2, m2)
+                    addDate(candidates, h2, m2)
                 }
-
-                // 2. 1桁時 + 1桁分（例: 12 -> 1:02, 1時2分）
-                val d1 = numbers.substring(0, 1).toInt()
-                val d2 = numbers.substring(1, 2).toInt()
-                addTime(candidates, d1, d2)
-
-                // 3. 1桁月 + 1桁日（例: 12 -> 1月2日, 1/2）
-                addDate(candidates, d1, d2)
-            }
-            3 -> {
-                val h1 = numbers.substring(0, 1).toInt()
-                val m1 = numbers.substring(1, 3).toInt()
-                addTime(candidates, h1, m1)
-                addDate(candidates, h1, m1)
-
-                val h2 = numbers.substring(0, 2).toInt()
-                val m2 = numbers.substring(2, 3).toInt()
-                addTime(candidates, h2, m2)
-                addDate(candidates, h2, m2)
-            }
-            4 -> {
-                val h = numbers.substring(0, 2).toInt()
-                val m = numbers.substring(2, 4).toInt()
-                addTime(candidates, h, m)
-                addDate(candidates, h, m)
+                4 -> {
+                    val h = numbers.substring(0, 2).toInt()
+                    val m = numbers.substring(2, 4).toInt()
+                    addTime(candidates, h, m)
+                    addDate(candidates, h, m)
+                }
             }
         }
         return candidates.toList()
@@ -89,5 +93,64 @@ object DialTimeDateConverter {
             else -> 31
         }
         return day <= maxDays
+    }
+
+    fun evaluateExpression(rawExpr: String): String? {
+        val expr = rawExpr.replace('×', '*').replace('÷', '/').replace(" ", "")
+        if (expr.isEmpty()) return null
+        
+        if (!expr.all { it.isDigit() || it in "+-*/^%." }) return null
+        if (!expr.any { it in "+-*/^%" }) return null
+
+        return try {
+            val result = parseAndEvaluate(expr) ?: return null
+            if (result.isInfinite() || result.isNaN()) return null
+            
+            if (result % 1.0 == 0.0) {
+                result.toLong().toString()
+            } else {
+                result.toString()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun parseAndEvaluate(expr: String): Double? {
+        var i = expr.length - 1
+        while (i >= 0) {
+            val ch = expr[i]
+            if ((ch == '+' || ch == '-') && i > 0) {
+                val left = parseAndEvaluate(expr.substring(0, i)) ?: return null
+                val right = parseAndEvaluate(expr.substring(i + 1)) ?: return null
+                return if (ch == '+') left + right else left - right
+            }
+            i--
+        }
+
+        i = expr.length - 1
+        while (i >= 0) {
+            val ch = expr[i]
+            if (ch == '*' || ch == '%' || ch == '/') {
+                val left = parseAndEvaluate(expr.substring(0, i)) ?: return null
+                val right = parseAndEvaluate(expr.substring(i + 1)) ?: return null
+                return when (ch) {
+                    '*' -> left * right
+                    '/' -> if (right == 0.0) null else left / right
+                    '%' -> if (right == 0.0) null else left % right
+                    else -> null
+                }
+            }
+            i--
+        }
+
+        i = expr.indexOf('^')
+        if (i > 0) {
+            val left = parseAndEvaluate(expr.substring(0, i)) ?: return null
+            val right = parseAndEvaluate(expr.substring(i + 1)) ?: return null
+            return Math.pow(left, right)
+        }
+
+        return expr.toDoubleOrNull()
     }
 }

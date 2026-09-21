@@ -67,4 +67,34 @@ class DialTimeDateConverterTest {
         val expected = emptyList<String>()
         assertEquals(expected, result)
     }
+
+    @Test
+    fun testCase_wa_period_aaha() {
+        val numbers = DialTimeDateConverter.toDialNumbers("わ。ああは")
+        assertEquals("0.116", numbers)
+    }
+
+    @Test
+    fun testCase_ka_comma_wawawa() {
+        val numbers = DialTimeDateConverter.toDialNumbers("か、わわわ")
+        assertEquals("2,000", numbers)
+    }
+
+    @Test
+    fun testCase_calculation_addition() {
+        val result = DialTimeDateConverter.evaluateExpression("12+3")
+        assertEquals("15", result)
+    }
+
+    @Test
+    fun testCase_calculation_power() {
+        val result = DialTimeDateConverter.evaluateExpression("2^3")
+        assertEquals("8", result)
+    }
+
+    @Test
+    fun testCase_calculation_modulo() {
+        val result = DialTimeDateConverter.evaluateExpression("10%3")
+        assertEquals("1", result)
+    }
 }
