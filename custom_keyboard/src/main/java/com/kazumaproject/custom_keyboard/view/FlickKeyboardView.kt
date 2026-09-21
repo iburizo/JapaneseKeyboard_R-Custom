@@ -2890,6 +2890,17 @@ class FlickKeyboardView @JvmOverloads constructor(
     private val pointerDownTime = mutableMapOf<Int, Long>()
     private val TAG = "FlickKeyboardViewTouch"
 
+    private var isSelectionDeleteMode: Boolean = false
+    private var isSelectionDeleteReady: Boolean = false
+    private var selectionDeleteInitialX: Float = 0f
+    private var selectionDeleteInitialY: Float = 0f
+    private var lastSelectionDeltaX: Int = 0
+    private var lastSelectionDeltaY: Int = 0
+
+    var onSelectionDeleteSwipeStartListener: (() -> Unit)? = null
+    var onSelectionDeleteSwipeUpdateListener: ((Int, Int) -> Unit)? = null
+    var onSelectionDeleteSwipeEndListener: (() -> Unit)? = null
+
     private fun cancelTrackedTouchState() {
         cancelTextPreview()
         if (motionTargets.isEmpty() && pointerDownTime.isEmpty()) return
@@ -3145,6 +3156,63 @@ class FlickKeyboardView @JvmOverloads constructor(
             }
         }
 
+        val isDeleteSwipeEnabled = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.deleteKeySwipeSelectionEnableProvider?.invoke() != false
+
+        if (isDeleteSwipeEnabled && !isSelectionDeleteMode && isSelectionDeleteReady && event.actionMasked == MotionEvent.ACTION_MOVE) {
+            val dx = event.x - selectionDeleteInitialX
+            val dy = event.y - selectionDeleteInitialY
+            val threshold = 15f * resources.displayMetrics.density
+            if (kotlin.math.abs(dx) > threshold || kotlin.math.abs(dy) > threshold) {
+                isSelectionDeleteMode = true
+                isSelectionDeleteReady = false
+                cancelTrackedTouchState()
+                (onSelectionDeleteSwipeStartListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler)?.invoke()
+                lastSelectionDeltaX = 0
+                lastSelectionDeltaY = 0
+            }
+        }
+
+        if (isSelectionDeleteMode) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_MOVE -> {
+                    val pixelsPerCharX = 20f * resources.displayMetrics.density
+                    val pixelsPerCharY = 30f * resources.displayMetrics.density
+                    val dxFromStart = event.x - selectionDeleteInitialX
+                    val dyFromStart = event.y - selectionDeleteInitialY
+                    
+                    val rawDeltaX = (dxFromStart / pixelsPerCharX).toInt()
+                    val rawDeltaY = (dyFromStart / pixelsPerCharY).toInt()
+
+                    if (rawDeltaX != lastSelectionDeltaX || rawDeltaY != lastSelectionDeltaY) {
+                        lastSelectionDeltaX = rawDeltaX
+                        lastSelectionDeltaY = rawDeltaY
+                        (onSelectionDeleteSwipeUpdateListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeUpdateHandler)?.invoke(rawDeltaX, rawDeltaY)
+                    }
+                    return true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    (onSelectionDeleteSwipeEndListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler)?.invoke()
+                    isSelectionDeleteMode = false
+                    
+                    val actionToDispatch =
+                        if (event.actionMasked == MotionEvent.ACTION_UP) {
+                            MotionEvent.ACTION_UP
+                        } else {
+                            MotionEvent.ACTION_CANCEL
+                        }
+                    dispatchEndEventToTrackedTargets(event, actionToDispatch)
+
+                    if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                        listener?.onLongPressActionCanceled(KeyAction.Cancel)
+                    }
+                    
+                    motionTargets.clear()
+                    pointerDownTime.clear()
+                    return true
+                }
+            }
+        }
+
         when (action) {
             MotionEvent.ACTION_DOWN -> {
                 motionTargets.clear()
@@ -3184,7 +3252,9 @@ class FlickKeyboardView @JvmOverloads constructor(
                         }
                     } else false
 
-                    if (!hasComposingFlickOverride && 
+                    val isCursorSwipeEnabled = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorKeySwipeMoveEnableProvider?.invoke() != false
+
+                    if (isCursorSwipeEnabled && !hasComposingFlickOverride && 
                         (keyAction == KeyAction.MoveCursorLeft || 
                         keyAction == KeyAction.MoveCursorRight || 
                         keyAction == KeyAction.MoveCursorUp || 
@@ -3192,6 +3262,16 @@ class FlickKeyboardView @JvmOverloads constructor(
                         isCursorMode = true
                         cursorInitialX = event.x
                         cursorInitialY = event.y
+                    }
+
+                    val isDeleteSwipeEnabled = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.deleteKeySwipeSelectionEnableProvider?.invoke() != false
+
+                    if (isDeleteSwipeEnabled && !hasComposingFlickOverride && (keyAction == KeyAction.Delete || keyAction == KeyAction.Backspace)) {
+                        isSelectionDeleteReady = true
+                        selectionDeleteInitialX = event.x
+                        selectionDeleteInitialY = event.y
+                    } else {
+                        isSelectionDeleteReady = false
                     }
                 }
                 return true

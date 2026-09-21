@@ -110,6 +110,18 @@
             android:title="@string/keyboard_floating_preference_title" />
 
         <SwitchPreferenceCompat
+            android:key="cursor_key_swipe_move_enable_preference"
+            android:title="@string/cursor_key_swipe_move_title"
+            app:defaultValue="true"
+            app:summary="@string/cursor_key_swipe_move_summary" />
+
+        <SwitchPreferenceCompat
+            android:key="delete_key_swipe_selection_enable_preference"
+            android:title="@string/delete_key_swipe_selection_title"
+            app:defaultValue="true"
+            app:summary="@string/delete_key_swipe_selection_summary" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="landscape_force_qwerty_preference"
             android:title="@string/landscape_force_qwerty_preference_title"

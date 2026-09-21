@@ -274,9 +274,18 @@ object AppModule {
             com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.uExtensionModeProvider = {
                 sumire_u_extension_mode_preference
             }
-            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.hierarchicalFlickStageThresholdMultiplierProvider = {
-                hierarchical_flick_stage_threshold_multiplier_preference
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorKeySwipeMoveEnableProvider = {
+                cursor_key_swipe_move_enable_preference
             }
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.deleteKeySwipeSelectionEnableProvider = {
+                delete_key_swipe_selection_enable_preference
+            }
+            com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteGlobalBinder.bind(
+                inputConnectionProvider = { null },
+                isComposingActive = { false },
+                finishComposing = {},
+                pushEditHistory = {}
+            )
         }
     }
 

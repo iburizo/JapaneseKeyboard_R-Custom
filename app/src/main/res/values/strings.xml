@@ -22,7 +22,11 @@
     <string name="two_step_flick_max_angle_summary">Adjust the recognition angle range for 2nd-step fllicks to prevent accidental triggers.</string>
     <string name="hierarchical_flick_stage_threshold_title">3-Step Flick 2nd-Stage Mis-trigger Prevention</string>
     <string name="hierarchical_flick_stage_threshold_summary">Adjusts the required slide distance for 2nd/3rd stages to prevent accidental triggers.</string>
-    <string name="sumire_u_extension_mode_title">Sumire \'u\' Auto Completion</string>
+    <string name="sumire_u_extension_mode_title">[CUSTOM] Sumire \'u\' Auto Completion</string>
+    <string name="cursor_key_swipe_move_title">[CUSTOM] Arrow Key Swipe</string>
+    <string name="cursor_key_swipe_move_summary">Move the cursor in real-time based on the distance swiped while pressing an arrow key.</string>
+    <string name="delete_key_swipe_selection_title">[CUSTOM] Delete Key Swipe</string>
+    <string name="delete_key_swipe_selection_summary">Swipe the delete key when not composing to select text, and release to delete it all at once.</string>
     <string name="sumire_u_extension_mode_dialog_title">Direction for \'u\' Auto Completion</string>
     <string name="utility_region_us">United States</string>
     <string name="utility_region_uk">United Kingdom</string>

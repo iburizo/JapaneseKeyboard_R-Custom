@@ -159,7 +159,11 @@ object KeyboardDefaultLayouts {
      * @return The final, state-applied KeyboardLayout.
      */
     var uExtensionModeProvider: (() -> String)? = null
-    var hierarchicalFlickStageThresholdMultiplierProvider: (() -> Float)? = null
+    var cursorKeySwipeMoveEnableProvider: (() -> Boolean)? = null
+    var deleteKeySwipeSelectionEnableProvider: (() -> Boolean)? = null
+    var onSelectionDeleteSwipeStartHandler: (() -> Unit)? = null
+    var onSelectionDeleteSwipeUpdateHandler: ((Int, Int) -> Unit)? = null
+    var onSelectionDeleteSwipeEndHandler: (() -> Unit)? = null
 
     fun createFinalLayout(
         mode: KeyboardInputMode,

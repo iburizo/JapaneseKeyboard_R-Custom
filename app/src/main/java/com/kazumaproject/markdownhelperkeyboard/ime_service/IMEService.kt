@@ -13292,6 +13292,12 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         isFloatingView: Boolean
     ) {
         flickView.isComposingActiveProvider = { inputString.value.isNotEmpty() }
+        SelectionDeleteGlobalBinder.bind(
+            inputConnectionProvider = { currentInputConnection },
+            isComposingActive = { inputString.value.isNotEmpty() },
+            finishComposing = { finishComposingText() },
+            pushEditHistory = { text -> pushEditHistoryEntry(EditHistoryEntry.DeleteCommittedText(text)) }
+        )
         flickView.setOnFlickTextPreviewListener(sumireFlickTextPreviewListener)
         flickView.bindRuntimeGestureSettings(runtimeGestureSettingsSource)
         val tfbiPopupPresentationMode = appPreference.flick_tfbi_popup_presentation

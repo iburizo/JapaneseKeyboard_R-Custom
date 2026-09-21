@@ -18,7 +18,11 @@
     <string name="utility_angle_degrees">度数法</string>
     <string name="utility_angle_radians">ラジアン</string>
     <string name="utility_region_japan">日本</string>
-    <string name="sumire_u_extension_mode_title">すみれ『う』自動入力 (長音補完)</string>
+    <string name="sumire_u_extension_mode_title">[CUSTOM] すみれ『う』自動入力 (長音補完)</string>
+    <string name="cursor_key_swipe_move_title">[CUSTOM] 矢印キースワイプ</string>
+    <string name="cursor_key_swipe_move_summary">矢印キーを押したまま指を滑らせた距離に応じて、リアルタイムにカーソルを移動させます。</string>
+    <string name="delete_key_swipe_selection_title">[CUSTOM] 削除キースワイプ</string>
+    <string name="delete_key_swipe_selection_summary">未入力時に削除キーを左や下へ滑らせてテキストを範囲選択し、指を離した瞬間に一括削除します。</string>
     <string name="sumire_u_extension_mode_dialog_title">『う』自動入力の方向または無効化</string>
     <string name="utility_region_us">米国</string>
     <string name="utility_region_uk">英国</string>

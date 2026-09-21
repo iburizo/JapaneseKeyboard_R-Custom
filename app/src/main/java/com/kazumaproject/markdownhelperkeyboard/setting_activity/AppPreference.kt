@@ -58,6 +58,8 @@ object AppPreference {
     const val UTILITY_REGIONAL_PROFILE_KEY = "utility_regional_profile"
     const val UTILITY_UNIT_TARGETS_JSON_KEY = "utility_unit_targets_json"
     const val SUMIRE_U_EXTENSION_MODE_KEY = "sumire_u_extension_mode_preference"
+    const val CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY = "cursor_key_swipe_move_enable_preference"
+    const val DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY = "delete_key_swipe_selection_enable_preference"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
 
     const val DEFAULT_CUSTOM_THEME_CANDIDATE_ITEM_BG_COLOR = 0x00000000
@@ -401,6 +403,10 @@ object AppPreference {
         Pair("sumire_restore_input_mode_timeout_minutes_preference", 5)
     private val SUMIRE_U_EXTENSION_MODE_PREFERENCE =
         Pair(SUMIRE_U_EXTENSION_MODE_KEY, "up_right")
+    private val CURSOR_KEY_SWIPE_MOVE_ENABLE_PREFERENCE =
+        Pair(CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY, true)
+    private val DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE =
+        Pair(DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY, true)
     private val SUMIRE_LAST_INPUT_MODE_PREFERENCE =
         Pair("sumire_last_input_mode_preference", "japanese")
     private val SUMIRE_LAST_INPUT_MODE_PRESENTATION_PREFERENCE =
@@ -1817,9 +1823,27 @@ object AppPreference {
         get() = preferences.getString(
             SUMIRE_U_EXTENSION_MODE_PREFERENCE.first,
             SUMIRE_U_EXTENSION_MODE_PREFERENCE.second
-        ) ?: SUMIRE_U_EXTENSION_MODE_PREFERENCE.second
+        ) ?: "up_right"
         set(value) = preferences.edit {
             it.putString(SUMIRE_U_EXTENSION_MODE_PREFERENCE.first, value)
+        }
+
+    var cursor_key_swipe_move_enable_preference: Boolean
+        get() = preferences.getBoolean(
+            CURSOR_KEY_SWIPE_MOVE_ENABLE_PREFERENCE.first,
+            CURSOR_KEY_SWIPE_MOVE_ENABLE_PREFERENCE.second
+        )
+        set(value) = preferences.edit {
+            it.putBoolean(CURSOR_KEY_SWIPE_MOVE_ENABLE_PREFERENCE.first, value)
+        }
+
+    var delete_key_swipe_selection_enable_preference: Boolean
+        get() = preferences.getBoolean(
+            DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE.first,
+            DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE.second
+        )
+        set(value) = preferences.edit {
+            it.putBoolean(DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE.first, value)
         }
 
     var long_press_timeout_preference: Int?
