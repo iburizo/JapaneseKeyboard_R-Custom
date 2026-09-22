@@ -818,4 +818,15 @@
             android:title="@string/app_version_title" />
     </PreferenceCategory>
 
+
+        <SwitchPreferenceCompat
+            android:key="cursor_key_swipe_move_preference"
+            android:title="[CUSTOM] 矢印キースワイプ"
+            app:defaultValue="true" />
+            
+        <SwitchPreferenceCompat
+            android:key="delete_key_swipe_selection_preference"
+            android:title="[CUSTOM] 削除キースワイプ"
+            app:defaultValue="true" />
+    
 </PreferenceScreen>

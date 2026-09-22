@@ -18,6 +18,8 @@ import com.kazumaproject.custom_keyboard.data.copyWithKeys
 import com.kazumaproject.custom_keyboard.view.TfbiFlickDirection
 
 object KeyboardDefaultLayouts {
+    var uExtensionModeProvider: () -> String = { "up_right" }
+
     fun createToggleKanaTemplateLayout(): KeyboardLayout {
         val layout = createFlickKanaTemplateLayout(isDefaultKey = true)
         return layout.copyWithKeys(layout.keys.map { key ->

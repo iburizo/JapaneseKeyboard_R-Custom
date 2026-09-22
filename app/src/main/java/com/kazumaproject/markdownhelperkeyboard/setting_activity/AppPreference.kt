@@ -908,6 +908,15 @@ object AppPreference {
     private val TYPO_CORRECTION_JA_FLICK_OFFSET_SCORE_PREFERENCE =
         Pair("enable_typo_correction_japanese_flick_keyboard_offset_score_preference", 3000)
 
+
+    var cursor_key_swipe_move_preference: Boolean
+        get() = preferences.getBoolean("cursor_key_swipe_move_preference", true)
+        set(value) = preferences.edit { it.putBoolean("cursor_key_swipe_move_preference", value) }
+
+    var delete_key_swipe_selection_preference: Boolean
+        get() = preferences.getBoolean("delete_key_swipe_selection_preference", true)
+        set(value) = preferences.edit { it.putBoolean("delete_key_swipe_selection_preference", value) }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         isTabletDevice = context.resources.getBoolean(CoreR.bool.isTablet)
@@ -2622,6 +2631,12 @@ object AppPreference {
         get() = preferences.getString(NEW_SUMIRE_STYLE_KEY, "default") ?: "default"
         set(value) = preferences.edit {
             it.putString(NEW_SUMIRE_STYLE_KEY, value)
+        }
+
+    var sumire_u_extension_mode_preference: String
+        get() = preferences.getString("sumire_u_extension_mode_preference", "up_right") ?: "up_right"
+        set(value) = preferences.edit {
+            it.putString("sumire_u_extension_mode_preference", value)
         }
 
     var sumire_input_method: String

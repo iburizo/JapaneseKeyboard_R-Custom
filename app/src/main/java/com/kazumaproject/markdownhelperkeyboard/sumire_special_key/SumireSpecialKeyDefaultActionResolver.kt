@@ -43,15 +43,15 @@ object SumireSpecialKeyDefaultActionResolver {
 
     private fun SumireSpecialKeyDirection.flickDirectionCandidates(): List<FlickDirection> {
         return when (this) {
-            SumireSpecialKeyDirection.TAP -> listOf(FlickDirection.TAP)
-            SumireSpecialKeyDirection.UP -> listOf(FlickDirection.UP)
-            SumireSpecialKeyDirection.RIGHT -> listOf(
+            SumireSpecialKeyDirection.TAP, SumireSpecialKeyDirection.TAP_COMPOSING -> listOf(FlickDirection.TAP)
+            SumireSpecialKeyDirection.UP, SumireSpecialKeyDirection.UP_COMPOSING -> listOf(FlickDirection.UP)
+            SumireSpecialKeyDirection.RIGHT, SumireSpecialKeyDirection.RIGHT_COMPOSING -> listOf(
                 FlickDirection.UP_RIGHT_FAR,
                 FlickDirection.UP_RIGHT
             )
 
-            SumireSpecialKeyDirection.DOWN -> listOf(FlickDirection.DOWN)
-            SumireSpecialKeyDirection.LEFT -> listOf(
+            SumireSpecialKeyDirection.DOWN, SumireSpecialKeyDirection.DOWN_COMPOSING -> listOf(FlickDirection.DOWN)
+            SumireSpecialKeyDirection.LEFT, SumireSpecialKeyDirection.LEFT_COMPOSING -> listOf(
                 FlickDirection.UP_LEFT_FAR,
                 FlickDirection.UP_LEFT
             )

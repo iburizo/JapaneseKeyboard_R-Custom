@@ -30,6 +30,8 @@ sealed class KeyAction {
 
     // 文字列入力系
     data class InputText(val text: String) : KeyAction()
+    data object UndoCommit : KeyAction()
+    data object CommitDialNumbers : KeyAction()
 
     /** 旧 onKey に対応する通常文字入力 */
     data class Text(val text: String) : KeyAction()

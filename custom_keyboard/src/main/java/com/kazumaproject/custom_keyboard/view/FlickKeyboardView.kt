@@ -123,6 +123,21 @@ class FlickKeyboardView @JvmOverloads constructor(
     }
 
     private var listener: OnKeyboardActionListener? = null
+    var isComposing: Boolean = false
+    private var isCursorSwipeActive = false
+    private var isDeleteSwipeActive = false
+    private var swipePointerId = -1
+
+    var cursorKeySwipeMoveEnableProvider: () -> Boolean = { false }
+    var deleteKeySwipeSelectionEnableProvider: () -> Boolean = { false }
+
+    interface SelectionDeleteHandler {
+        fun onStart()
+        fun onUpdate(dx: Int, dy: Int)
+        fun onCommit()
+    }
+    var selectionDeleteHandler: SelectionDeleteHandler? = null
+
     private val flickTextPreviewEmitter = FlickTextPreviewEmitter()
     private var previewKeyData: KeyData? = null
     private val flickControllers = mutableListOf<CustomAngleFlickController>()
@@ -1659,7 +1674,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                 Log.d("FlickKeyboardView KeyType.CROSS_FLICK", "$flickActionMap")
                 if (flickActionMap != null) {
                     val displayFlickActionMap =
-                        buildSumireSpecialKeyDisplayActionMap(keyData, flickActionMap) { data, direction ->
+                        buildSumireSpecialKeyDisplayActionMap(keyData, flickActionMap, this@FlickKeyboardView.isComposing) { data, direction ->
                             resolveSumireSpecialKeyOverride(data, direction)
                         }
                     val controller = CrossFlickInputController(
@@ -1681,7 +1696,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 when (
                                     val resolved = resolveSumireSpecialKeyOverride(
                                         keyData,
-                                        direction.toSumireSpecialKeyDirectionOrNull()
+                                        direction.toSumireSpecialKeyDirectionOrNull(this@FlickKeyboardView.isComposing)
                                             ?: SumireSpecialKeyDirection.TAP
                                     )
                                 ) {
@@ -1725,6 +1740,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                                     flickDirection = direction,
                                     fallbackAction = fallbackAction,
                                     isFlick = isFlick,
+                                    isComposing = this@FlickKeyboardView.isComposing,
                                     resolve = ::resolveSumireSpecialKeyOverride
                                 ) { dispatchedAction, actionIsFlick ->
                                     dispatchCommittedKeyAction(
@@ -3221,6 +3237,37 @@ class FlickKeyboardView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_MOVE -> {
+                if (isCursorSwipeActive && swipePointerId != -1) {
+                    val idx = event.findPointerIndex(swipePointerId)
+                    if (idx != -1) {
+                        val currentX = event.x
+                        val currentY = event.y
+                        val dx = currentX - cursorInitialX
+                        val dy = currentY - cursorInitialY
+                        val threshold = 30f
+                        if (kotlin.math.abs(dx) > kotlin.math.abs(dy) && kotlin.math.abs(dx) > threshold) {
+                            val action2 = if (dx < 0f) KeyAction.MoveCursorLeft else KeyAction.MoveCursorRight
+                            dispatchNonTapAction(action2, false)
+                            cursorInitialX = currentX
+                            cursorInitialY = currentY
+                        } else if (kotlin.math.abs(dy) > kotlin.math.abs(dx) && kotlin.math.abs(dy) > threshold) {
+                            val action2 = if (dy < 0f) KeyAction.MoveCursorUp else KeyAction.MoveCursorDown
+                            dispatchNonTapAction(action2, false)
+                            cursorInitialX = currentX
+                            cursorInitialY = currentY
+                        }
+                        return true
+                    }
+                }
+                if (isDeleteSwipeActive && swipePointerId != -1) {
+                    val idx = event.findPointerIndex(swipePointerId)
+                    if (idx != -1) {
+                        val currentX = event.x
+                        val currentY = event.y
+                        selectionDeleteHandler?.onUpdate((currentX - cursorInitialX).toInt(), (currentY - cursorInitialY).toInt())
+                        return true
+                    }
+                }
                 for (i in 0 until event.pointerCount) {
                     val pId = event.getPointerId(i)
                     val target = motionTargets[pId]

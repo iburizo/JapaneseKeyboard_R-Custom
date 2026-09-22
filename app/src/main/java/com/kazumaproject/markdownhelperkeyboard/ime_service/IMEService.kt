@@ -2827,6 +2827,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     }
 
     override fun onCreate() {
+        KeyboardDefaultLayouts.uExtensionModeProvider = { AppPreference.sumire_u_extension_mode_preference }
         super.onCreate()
         window.window?.let { imeWindow ->
             if (supportsNavbarExtension) {
@@ -13442,6 +13443,10 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         mainView: MainLayoutBinding,
         isFloatingView: Boolean
     ) {
+        flickView.cursorKeySwipeMoveEnableProvider = { appPreference.cursor_key_swipe_move_preference }
+        flickView.deleteKeySwipeSelectionEnableProvider = { appPreference.delete_key_swipe_selection_preference }
+        com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteBinding(flickView) { currentInputConnection }.bind()
+
         flickView.setOnFlickTextPreviewListener(sumireFlickTextPreviewListener)
         flickView.bindRuntimeGestureSettings(runtimeGestureSettingsSource)
         val tfbiPopupPresentationMode = appPreference.flick_tfbi_popup_presentation
@@ -13742,6 +13747,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
                     KeyAction.SwitchRomajiEnglish -> {}
+                    KeyAction.UndoCommit -> {
+                        performPendingReconversion()
+                    }
+                    KeyAction.CommitDialNumbers -> {
+                        val str = inputString.value
+                        if (str.isNotEmpty()) {
+                            val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.generateCandidates(str).firstOrNull() ?: com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.convertAdanToNumber(str)
+                            commitAndClearInput(converted)
+                        }
+                    }
                     KeyAction.ForceNewLine -> {
                         val insertString = inputString.value
                         val suggestions = suggestionAdapter?.suggestions ?: emptyList()
@@ -13822,6 +13837,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
+                    KeyAction.UndoCommit -> {
+                        performPendingReconversion()
+                    }
+                    KeyAction.CommitDialNumbers -> {
+                        val str = inputString.value
+                        if (str.isNotEmpty()) {
+                            val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.generateCandidates(str).firstOrNull() ?: com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.convertAdanToNumber(str)
+                            commitAndClearInput(converted)
+                        }
+                    }
                     KeyAction.ForceNewLine -> {}
                     KeyAction.SwitchDirectMode -> {}
                     KeyAction.SwitchRomajiEnglish -> {}
@@ -13986,6 +14011,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
+                    KeyAction.UndoCommit -> {
+                        performPendingReconversion()
+                    }
+                    KeyAction.CommitDialNumbers -> {
+                        val str = inputString.value
+                        if (str.isNotEmpty()) {
+                            val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.generateCandidates(str).firstOrNull() ?: com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.convertAdanToNumber(str)
+                            commitAndClearInput(converted)
+                        }
+                    }
                     KeyAction.ForceNewLine -> {}
                     KeyAction.SwitchDirectMode -> {}
                     KeyAction.SwitchRomajiEnglish -> {}
@@ -14231,6 +14266,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                     KeyAction.VoiceInput -> {}
                     is KeyAction.Text -> Unit
+                    KeyAction.UndoCommit -> {
+                        performPendingReconversion()
+                    }
+                    KeyAction.CommitDialNumbers -> {
+                        val str = inputString.value
+                        if (str.isNotEmpty()) {
+                            val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.generateCandidates(str).firstOrNull() ?: com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.convertAdanToNumber(str)
+                            commitAndClearInput(converted)
+                        }
+                    }
                     KeyAction.ForceNewLine -> {
                         val insertString = inputString.value
                         val suggestions = suggestionAdapter?.suggestions ?: emptyList()
@@ -14537,6 +14582,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                         handleCommitAndInsertSpace()
                     }
 
+                    KeyAction.UndoCommit -> {
+                        performPendingReconversion()
+                    }
+                    KeyAction.CommitDialNumbers -> {
+                        val str = inputString.value
+                        if (str.isNotEmpty()) {
+                            val converted = com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.generateCandidates(str).firstOrNull() ?: com.kazumaproject.markdownhelperkeyboard.converter.utility.DialTimeDateConverter.convertAdanToNumber(str)
+                            commitAndClearInput(converted)
+                        }
+                    }
                     KeyAction.ForceNewLine -> {
                         val insertString = inputString.value
                         val suggestions = suggestionAdapter?.suggestions ?: emptyList()
@@ -28975,6 +29030,11 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
     override fun setComposingText(p0: CharSequence?, p1: Int): Boolean {
         val connection = currentInputConnection ?: return false
+        val isComposing = !p0.isNullOrEmpty()
+        mainLayoutBinding?.customLayoutDefault?.isComposing = isComposing
+        splitInputs.values.forEach {
+            it.binding.customLayoutFloating.isComposing = isComposing
+        }
         cancelCandidateTranslationIfComposingChanges(p0)
         val applied = composingTextArbiter.setCanonical(p0, p1)
         if (applied) composingGuide?.update(p0, inputString.value + stringInTail.get(), isLiveConversionEnable == true)

@@ -12,10 +12,11 @@ fun dispatchSumireSpecialKeyRuntimeAction(
     flickDirection: FlickDirection,
     fallbackAction: KeyAction?,
     isFlick: Boolean,
+    isComposing: Boolean,
     resolve: (KeyData, SumireSpecialKeyDirection) -> ResolvedSumireSpecialKeyAction,
     dispatch: (KeyAction, Boolean) -> Unit
 ): SumireSpecialKeyRuntimeDispatchResult {
-    val sumireDirection = flickDirection.toSumireSpecialKeyDirectionOrNull()
+    val sumireDirection = flickDirection.toSumireSpecialKeyDirectionOrNull(isComposing)
     if (sumireDirection == null) {
         fallbackAction?.let { dispatch(it, isFlick) }
         return SumireSpecialKeyRuntimeDispatchResult(

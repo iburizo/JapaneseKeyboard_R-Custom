@@ -191,6 +191,21 @@ object KeyActionMapper {
                 KeyAction.VoiceInput,
                 context.getString(R.string.voice_input),
                 com.kazumaproject.core.R.drawable.settings_voice_24px
+            ),
+            DisplayAction(
+                KeyAction.Text("っ"),
+                "促音 (っ)",
+                com.kazumaproject.core.R.drawable.sokuon_icon
+            ),
+            DisplayAction(
+                KeyAction.UndoCommit,
+                "確定戻し",
+                com.kazumaproject.core.R.drawable.undo_24px
+            ),
+            DisplayAction(
+                KeyAction.CommitDialNumbers,
+                "ア段数字変換確定",
+                com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             )
         )
     }
@@ -231,6 +246,9 @@ object KeyActionMapper {
             KeyAction.SwitchToNumberLayout -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             KeyAction.ToggleKatakana -> com.kazumaproject.core.R.drawable.katakana
             KeyAction.VoiceInput -> com.kazumaproject.core.R.drawable.settings_voice_24px
+            KeyAction.Text("っ") -> com.kazumaproject.core.R.drawable.sokuon_icon
+            KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
+            KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             else -> null
         }
     }
@@ -285,6 +303,8 @@ object KeyActionMapper {
             is KeyAction.SwitchDirectMode -> "SwitchDirectMode"
             is KeyAction.ForceHalfWidthSpace -> "ForceHalfWidthSpace"
             is KeyAction.ForceFullWidthSpace -> "ForceFullWidthSpace"
+            is KeyAction.UndoCommit -> "UndoCommit"
+            is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
             else -> null
         }
     }
@@ -343,6 +363,8 @@ object KeyActionMapper {
             "SwitchDirectMode" -> KeyAction.SwitchDirectMode
             "ForceHalfWidthSpace" -> KeyAction.ForceHalfWidthSpace
             "ForceFullWidthSpace" -> KeyAction.ForceFullWidthSpace
+            "UndoCommit" -> KeyAction.UndoCommit
+            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
             else -> null
         }
     }

@@ -5,7 +5,12 @@ enum class SumireSpecialKeyDirection {
     UP,
     RIGHT,
     DOWN,
-    LEFT
+    LEFT,
+    TAP_COMPOSING,
+    UP_COMPOSING,
+    RIGHT_COMPOSING,
+    DOWN_COMPOSING,
+    LEFT_COMPOSING
 }
 
 sealed class ResolvedSumireSpecialKeyAction {
