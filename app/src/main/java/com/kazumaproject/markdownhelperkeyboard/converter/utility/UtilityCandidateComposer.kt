@@ -14,8 +14,11 @@ object UtilityCandidateComposer {
         existingCandidates: List<Candidate>,
         result: UtilityCandidateResult,
     ): List<Candidate> {
-        if (!result.hasCandidates) return existingCandidates
-        val utilityCandidates = result.candidates.map { candidate ->
+        val dialCandidates = DialTimeDateConverter.generateCandidates(input).map {
+            Candidate(string = it, type = CANDIDATE_TYPE_UTILITY_LITERAL, length = input.length.coerceAtMost(UByte.MAX_VALUE.toInt()).toUByte(), score = 0, yomi = input)
+        }
+        if (!result.hasCandidates && dialCandidates.isEmpty()) return existingCandidates
+        val utilityCandidates = dialCandidates + result.candidates.map { candidate ->
             Candidate(
                 string = candidate.text,
                 type = when (candidate.kind) {

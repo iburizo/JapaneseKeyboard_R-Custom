@@ -246,7 +246,11 @@ object KeyActionMapper {
             KeyAction.SwitchToNumberLayout -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             KeyAction.ToggleKatakana -> com.kazumaproject.core.R.drawable.katakana
             KeyAction.VoiceInput -> com.kazumaproject.core.R.drawable.settings_voice_24px
+            KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
+            KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             KeyAction.Text("っ") -> com.kazumaproject.core.R.drawable.sokuon_icon
+            KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
+            KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
             KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             else -> null
@@ -303,6 +307,10 @@ object KeyActionMapper {
             is KeyAction.SwitchDirectMode -> "SwitchDirectMode"
             is KeyAction.ForceHalfWidthSpace -> "ForceHalfWidthSpace"
             is KeyAction.ForceFullWidthSpace -> "ForceFullWidthSpace"
+            is KeyAction.UndoCommit -> "UndoCommit"
+            is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
+            is KeyAction.UndoCommit -> "UndoCommit"
+            is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
             is KeyAction.UndoCommit -> "UndoCommit"
             is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
             else -> null
@@ -363,6 +371,10 @@ object KeyActionMapper {
             "SwitchDirectMode" -> KeyAction.SwitchDirectMode
             "ForceHalfWidthSpace" -> KeyAction.ForceHalfWidthSpace
             "ForceFullWidthSpace" -> KeyAction.ForceFullWidthSpace
+            "UndoCommit" -> KeyAction.UndoCommit
+            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
+            "UndoCommit" -> KeyAction.UndoCommit
+            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
             "UndoCommit" -> KeyAction.UndoCommit
             "CommitDialNumbers" -> KeyAction.CommitDialNumbers
             else -> null
