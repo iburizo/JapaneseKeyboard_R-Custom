@@ -105,7 +105,7 @@ object UtilityCandidateComposer {
                 }
             }
 
-            UtilityTrigger.NONE -> existingCandidates
+            UtilityTrigger.NONE -> utilityCandidates + existingCandidates
         }
         return if (result.trigger == UtilityTrigger.FORMULA) {
             distinctFormulaCandidates(ordered)
