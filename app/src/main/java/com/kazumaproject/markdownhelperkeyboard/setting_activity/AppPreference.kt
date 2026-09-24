@@ -917,6 +917,10 @@ object AppPreference {
         get() = preferences.getBoolean("delete_key_swipe_selection_preference", true)
         set(value) = preferences.edit { it.putBoolean("delete_key_swipe_selection_preference", value) }
 
+    var debug_mode_preference: Boolean
+        get() = preferences.getBoolean("debug_mode_preference", false)
+        set(value) = preferences.edit { it.putBoolean("debug_mode_preference", value) }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         isTabletDevice = context.resources.getBoolean(CoreR.bool.isTablet)

@@ -65,6 +65,17 @@
 
     <PreferenceCategory android:title="@string/setting_category_operation_keys_title">
 
+        <SwitchPreferenceCompat
+            android:key="cursor_key_swipe_move_preference"
+            android:title="[CUSTOM] 矢印キースワイプ"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="debug_mode_preference"
+            android:title="[CUSTOM] デバッグモード (状態表示)"
+            android:summary="スワイプ状態等の内部変数を画面上に赤字で表示します"
+            app:defaultValue="false" />
+
         <ListPreference
             android:defaultValue="deferred"
             android:dialogTitle="@string/delete_long_press_conversion_behavior_title"

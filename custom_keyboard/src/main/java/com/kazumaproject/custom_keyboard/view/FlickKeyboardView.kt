@@ -125,18 +125,15 @@ class FlickKeyboardView @JvmOverloads constructor(
     private var listener: OnKeyboardActionListener? = null
     var isComposing: Boolean = false
     private var isCursorSwipeActive = false
-    private var isDeleteSwipeActive = false
     private var swipePointerId = -1
+    private var swipeCancelDispatched = false
 
     var cursorKeySwipeMoveEnableProvider: () -> Boolean = { false }
     var deleteKeySwipeSelectionEnableProvider: () -> Boolean = { false }
-
-    interface SelectionDeleteHandler {
-        fun onStart()
-        fun onUpdate(dx: Int, dy: Int)
-        fun onCommit()
-    }
-    var selectionDeleteHandler: SelectionDeleteHandler? = null
+    private var isDeleteSwipeActive = false
+    var isDebugModeEnabled: Boolean = false
+    private var debugSwipeDx: Float = 0f
+    private var debugSwipeDy: Float = 0f
 
     private val flickTextPreviewEmitter = FlickTextPreviewEmitter()
     private var previewKeyData: KeyData? = null
@@ -3151,6 +3148,36 @@ class FlickKeyboardView @JvmOverloads constructor(
 
                 targetView?.let { target ->
                     motionTargets[pointerId] = target
+                    val keyData = keyInfos.firstOrNull { it.view === target.view }?.keyData
+                    isCursorSwipeActive = false
+                    swipeCancelDispatched = false
+                    if (isDebugModeEnabled) invalidate()
+                    if (keyData != null) {
+                        val isArrow = keyData.action is KeyAction.MoveCursorLeft ||
+                                keyData.action is KeyAction.MoveCursorRight ||
+                                keyData.action is KeyAction.MoveCursorUp ||
+                                keyData.action is KeyAction.MoveCursorDown
+                        if (isArrow && cursorKeySwipeMoveEnableProvider()) {
+                            isCursorSwipeActive = true
+                            swipePointerId = pointerId
+                            cursorInitialX = event.x
+                            cursorInitialY = event.y
+                        } else {
+                            val tapAction = currentLayout?.flickKeyMaps?.get(keyData.label)?.firstOrNull()?.get(FlickDirection.TAP)
+                            val isDeleteKey = keyData.action is KeyAction.Delete ||
+                                    keyData.keyId?.contains("delete", ignoreCase = true) == true ||
+                                    keyData.label.contains("Del", ignoreCase = true) ||
+                                    (tapAction as? FlickAction.Action)?.action is KeyAction.Delete
+
+                            if (isDeleteKey && !isComposing && deleteKeySwipeSelectionEnableProvider()) {
+                                isDeleteSwipeActive = true
+                                swipePointerId = pointerId
+                                cursorInitialX = event.x
+                                cursorInitialY = event.y
+                                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler?.invoke()
+                            }
+                        }
+                    }
                     dispatchPointerEvent(
                         source = event,
                         pointerIndex = pointerIndex,
@@ -3237,6 +3264,30 @@ class FlickKeyboardView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_MOVE -> {
+                if (isDeleteSwipeActive && swipePointerId != -1) {
+                    val idx = event.findPointerIndex(swipePointerId)
+                    if (idx != -1) {
+                        val currentX = event.x
+                        val currentY = event.y
+                        val dx = currentX - cursorInitialX
+                        val dy = currentY - cursorInitialY
+                        
+                        debugSwipeDx = dx
+                        debugSwipeDy = dy
+                        if (isDebugModeEnabled) invalidate()
+                        
+                        if (!swipeCancelDispatched && (kotlin.math.abs(dx) > 10f || kotlin.math.abs(dy) > 10f)) {
+                            swipeCancelDispatched = true
+                            motionTargets[swipePointerId]?.let { target ->
+                                dispatchPointerEvent(event, idx, target, MotionEvent.ACTION_CANCEL, pointerDownTime[swipePointerId] ?: event.downTime)
+                            }
+                        }
+                        val deltaX = (dx / 40f).toInt()
+                        val deltaY = (dy / 40f).toInt()
+                        com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeUpdateHandler?.invoke(deltaX, deltaY)
+                        return true
+                    }
+                }
                 if (isCursorSwipeActive && swipePointerId != -1) {
                     val idx = event.findPointerIndex(swipePointerId)
                     if (idx != -1) {
@@ -3244,6 +3295,21 @@ class FlickKeyboardView @JvmOverloads constructor(
                         val currentY = event.y
                         val dx = currentX - cursorInitialX
                         val dy = currentY - cursorInitialY
+                        debugSwipeDx = dx
+                        debugSwipeDy = dy
+                        if (isDebugModeEnabled) invalidate()
+                        if (!swipeCancelDispatched && (kotlin.math.abs(dx) > 10f || kotlin.math.abs(dy) > 10f)) {
+                            swipeCancelDispatched = true
+                            motionTargets[swipePointerId]?.let { target ->
+                                dispatchPointerEvent(
+                                    source = event,
+                                    pointerIndex = idx,
+                                    target = target,
+                                    action = MotionEvent.ACTION_CANCEL,
+                                    downTime = pointerDownTime[swipePointerId] ?: event.downTime
+                                )
+                            }
+                        }
                         val threshold = 30f
                         if (kotlin.math.abs(dx) > kotlin.math.abs(dy) && kotlin.math.abs(dx) > threshold) {
                             val action2 = if (dx < 0f) KeyAction.MoveCursorLeft else KeyAction.MoveCursorRight
@@ -3256,15 +3322,6 @@ class FlickKeyboardView @JvmOverloads constructor(
                             cursorInitialX = currentX
                             cursorInitialY = currentY
                         }
-                        return true
-                    }
-                }
-                if (isDeleteSwipeActive && swipePointerId != -1) {
-                    val idx = event.findPointerIndex(swipePointerId)
-                    if (idx != -1) {
-                        val currentX = event.x
-                        val currentY = event.y
-                        selectionDeleteHandler?.onUpdate((currentX - cursorInitialX).toInt(), (currentY - cursorInitialY).toInt())
                         return true
                     }
                 }
@@ -3321,6 +3378,28 @@ class FlickKeyboardView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (isDeleteSwipeActive && swipePointerId != -1) {
+                    com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler?.invoke()
+                    val wasCancelled = swipeCancelDispatched
+                    isDeleteSwipeActive = false
+                    swipePointerId = -1
+                    if (wasCancelled) {
+                        motionTargets.clear()
+                        pointerDownTime.clear()
+                        if (isDebugModeEnabled) invalidate()
+                        return true
+                    }
+                }
+                if (isCursorSwipeActive && swipePointerId != -1) {
+                    val wasCancelled = swipeCancelDispatched
+                    isCursorSwipeActive = false
+                    swipePointerId = -1
+                    if (wasCancelled) {
+                        motionTargets.clear()
+                        pointerDownTime.clear()
+                        return true
+                    }
+                }
                 val actionToDispatch =
                     if (action == MotionEvent.ACTION_UP) MotionEvent.ACTION_UP else MotionEvent.ACTION_CANCEL
 
@@ -3347,6 +3426,24 @@ class FlickKeyboardView @JvmOverloads constructor(
 
         return super.onTouchEvent(event)
     }
+    override fun dispatchDraw(canvas: android.graphics.Canvas) {
+        super.dispatchDraw(canvas)
+        if (isDebugModeEnabled) {
+            val paint = android.graphics.Paint().apply {
+                color = android.graphics.Color.RED
+                textSize = 40f
+                style = android.graphics.Paint.Style.FILL
+                isAntiAlias = true
+            }
+            var y = 50f
+            canvas.drawText("Debug: ON", 20f, y, paint); y += 50f
+            canvas.drawText("isCursor: $isCursorSwipeActive, isDelete: $isDeleteSwipeActive", 20f, y, paint); y += 50f
+            canvas.drawText("dx: ${debugSwipeDx.toInt()}, dy: ${debugSwipeDy.toInt()}", 20f, y, paint); y += 50f
+            canvas.drawText("isComposing: $isComposing", 20f, y, paint); y += 50f
+            canvas.drawText("cancel: $swipeCancelDispatched", 20f, y, paint); y += 50f
+        }
+    }
+
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()

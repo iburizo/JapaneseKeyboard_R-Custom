@@ -823,10 +823,10 @@
             android:key="cursor_key_swipe_move_preference"
             android:title="[CUSTOM] 矢印キースワイプ"
             app:defaultValue="true" />
-            
+
         <SwitchPreferenceCompat
-            android:key="delete_key_swipe_selection_preference"
-            android:title="[CUSTOM] 削除キースワイプ"
-            app:defaultValue="true" />
-    
+            android:key="debug_mode_preference"
+            android:title="[CUSTOM] デバッグモード (状態表示)"
+            android:summary="スワイプ状態等の内部変数を画面上に赤字で表示します"
+            app:defaultValue="false" />
 </PreferenceScreen>

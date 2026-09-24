@@ -1,28 +1,22 @@
 package com.kazumaproject.markdownhelperkeyboard.ime_service
 
-import com.kazumaproject.custom_keyboard.view.FlickKeyboardView
-import android.view.inputmethod.InputConnection
+import com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts
 
-class SelectionDeleteBinding(
-    private val flickKeyboardView: FlickKeyboardView,
-    private val inputConnectionProvider: () -> InputConnection?
-) {
-    private val helper = SelectionDeleteHelper(inputConnectionProvider) {
-    }
-
-    fun bind() {
-        flickKeyboardView.selectionDeleteHandler = object : FlickKeyboardView.SelectionDeleteHandler {
-            override fun onStart() {
-                helper.startSelection()
-            }
-
-            override fun onUpdate(dx: Int, dy: Int) {
-                helper.updateSelection(dx, dy)
-            }
-
-            override fun onCommit() {
-                helper.commitDelete()
-            }
-        }
+object SelectionDeleteGlobalBinder {
+    fun bind(
+        inputConnectionProvider: () -> android.view.inputmethod.InputConnection?,
+        isComposingActive: () -> Boolean,
+        finishComposing: () -> Unit,
+        pushEditHistory: (String) -> Unit
+    ) {
+        val handler = SelectionDeleteHandler(
+            inputConnectionProvider = inputConnectionProvider,
+            isComposingActive = isComposingActive,
+            finishComposing = finishComposing,
+            onDeletedText = pushEditHistory
+        )
+        KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler = { handler.onSwipeStart() }
+        KeyboardDefaultLayouts.onSelectionDeleteSwipeUpdateHandler = { deltaX, deltaY -> handler.onSwipeUpdate(deltaX, deltaY) }
+        KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler = { handler.onSwipeEnd() }
     }
 }

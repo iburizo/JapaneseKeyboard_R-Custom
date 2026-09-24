@@ -18,6 +18,9 @@ import com.kazumaproject.custom_keyboard.data.copyWithKeys
 import com.kazumaproject.custom_keyboard.view.TfbiFlickDirection
 
 object KeyboardDefaultLayouts {
+    var onSelectionDeleteSwipeStartHandler: (() -> Unit)? = null
+    var onSelectionDeleteSwipeUpdateHandler: ((Int, Int) -> Unit)? = null
+    var onSelectionDeleteSwipeEndHandler: (() -> Unit)? = null
     var uExtensionModeProvider: () -> String = { "up_right" }
 
     fun createToggleKanaTemplateLayout(): KeyboardLayout {

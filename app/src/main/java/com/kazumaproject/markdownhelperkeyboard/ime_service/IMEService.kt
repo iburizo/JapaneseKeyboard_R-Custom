@@ -13445,7 +13445,14 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     ) {
         flickView.cursorKeySwipeMoveEnableProvider = { appPreference.cursor_key_swipe_move_preference }
         flickView.deleteKeySwipeSelectionEnableProvider = { appPreference.delete_key_swipe_selection_preference }
-        com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteBinding(flickView) { currentInputConnection }.bind()
+        
+        com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteGlobalBinder.bind(
+            inputConnectionProvider = { currentInputConnection },
+            isComposingActive = { inputString.value.isNotEmpty() },
+            finishComposing = { finishComposingText() },
+            pushEditHistory = { text -> pushEditHistoryEntry(EditHistoryEntry.DeleteCommittedText(text)) }
+        )
+        flickView.isDebugModeEnabled = appPreference.debug_mode_preference
 
         flickView.setOnFlickTextPreviewListener(sumireFlickTextPreviewListener)
         flickView.bindRuntimeGestureSettings(runtimeGestureSettingsSource)
@@ -17709,6 +17716,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
         launch {
             inputString.collect { string ->
+                val isComp = string.isNotEmpty()
+                mainView.customLayoutDefault.isComposing = isComp
+                splitInputs.values.forEach { it.binding.customLayoutFloating.isComposing = isComp }
                 if (string.isEmpty() && stringInTail.get().isEmpty()) composingGuide?.update(null)
                 try {
                     measureDebugStage("IMEService.input.immediate") {
