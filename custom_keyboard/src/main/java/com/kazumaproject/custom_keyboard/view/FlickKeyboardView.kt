@@ -3150,6 +3150,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                     motionTargets[pointerId] = target
                     val keyData = keyInfos.firstOrNull { it.view === target.view }?.keyData
                     isCursorSwipeActive = false
+                    isDeleteSwipeActive = false
                     swipeCancelDispatched = false
                     if (isDebugModeEnabled) invalidate()
                     if (keyData != null) {
