@@ -32,6 +32,7 @@ sealed class KeyAction {
     data class InputText(val text: String) : KeyAction()
     data object UndoCommit : KeyAction()
     data object CommitDialNumbers : KeyAction()
+    data object HideKeyboard : KeyAction()
 
     /** 旧 onKey に対応する通常文字入力 */
     data class Text(val text: String) : KeyAction()

@@ -13754,6 +13754,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
                     KeyAction.SwitchRomajiEnglish -> {}
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                     KeyAction.UndoCommit -> {
                         performPendingReconversion()
                     }
@@ -13844,6 +13847,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                     KeyAction.UndoCommit -> {
                         performPendingReconversion()
                     }
@@ -14018,6 +14024,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     is KeyAction.Text -> Unit
                     KeyAction.DeleteAfterCursorUntilSymbol -> {}
                     KeyAction.UndoLastDelete -> {}
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                     KeyAction.UndoCommit -> {
                         performPendingReconversion()
                     }
@@ -14273,6 +14282,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                     KeyAction.VoiceInput -> {}
                     is KeyAction.Text -> Unit
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                     KeyAction.UndoCommit -> {
                         performPendingReconversion()
                     }
@@ -14589,6 +14601,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                         handleCommitAndInsertSpace()
                     }
 
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                     KeyAction.UndoCommit -> {
                         performPendingReconversion()
                     }

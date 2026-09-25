@@ -206,6 +206,11 @@ object KeyActionMapper {
                 KeyAction.CommitDialNumbers,
                 "ア段数字変換確定",
                 com.kazumaproject.core.R.drawable.input_mode_number_select_custom
+            ),
+            DisplayAction(
+                KeyAction.HideKeyboard,
+                "キーボードを閉じる",
+                com.kazumaproject.core.R.drawable.keyboard_hide_24px
             )
         )
     }
@@ -248,11 +253,14 @@ object KeyActionMapper {
             KeyAction.VoiceInput -> com.kazumaproject.core.R.drawable.settings_voice_24px
             KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
             KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
+            KeyAction.HideKeyboard -> com.kazumaproject.core.R.drawable.keyboard_hide_24px
             KeyAction.Text("っ") -> com.kazumaproject.core.R.drawable.sokuon_icon
             KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
             KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
+            KeyAction.HideKeyboard -> com.kazumaproject.core.R.drawable.keyboard_hide_24px
             KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
             KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
+            KeyAction.HideKeyboard -> com.kazumaproject.core.R.drawable.keyboard_hide_24px
             else -> null
         }
     }
@@ -309,10 +317,13 @@ object KeyActionMapper {
             is KeyAction.ForceFullWidthSpace -> "ForceFullWidthSpace"
             is KeyAction.UndoCommit -> "UndoCommit"
             is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
+            is KeyAction.HideKeyboard -> "HideKeyboard"
             is KeyAction.UndoCommit -> "UndoCommit"
             is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
+            is KeyAction.HideKeyboard -> "HideKeyboard"
             is KeyAction.UndoCommit -> "UndoCommit"
             is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
+            is KeyAction.HideKeyboard -> "HideKeyboard"
             else -> null
         }
     }
@@ -371,12 +382,6 @@ object KeyActionMapper {
             "SwitchDirectMode" -> KeyAction.SwitchDirectMode
             "ForceHalfWidthSpace" -> KeyAction.ForceHalfWidthSpace
             "ForceFullWidthSpace" -> KeyAction.ForceFullWidthSpace
-            "UndoCommit" -> KeyAction.UndoCommit
-            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
-            "UndoCommit" -> KeyAction.UndoCommit
-            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
-            "UndoCommit" -> KeyAction.UndoCommit
-            "CommitDialNumbers" -> KeyAction.CommitDialNumbers
             else -> null
         }
     }
