@@ -75,6 +75,14 @@
     <string name="physical_keyboard_input_mode_title">日本語入力方式</string>
     <string name="physical_keyboard_input_mode_romaji">ローマ字入力</string>
     <string name="physical_keyboard_input_mode_kana">かな入力</string>
+    <string name="physical_toolbar_style_title">物理キーボード接続時の操作バー</string>
+    <string name="physical_toolbar_style_bottom">下部バー</string>
+    <string name="physical_toolbar_style_floating">フローティング</string>
+    <string name="physical_toolbar_mode_title">モード切替を表示</string>
+    <string name="physical_toolbar_keyboard_title">キーボード表示を追加</string>
+    <string name="physical_toolbar_voice_title">音声入力を追加</string>
+    <string name="physical_toolbar_keep_one">フローティングには少なくとも1項目が必要です。</string>
+    <string name="physical_toolbar_voice_permission_denied">音声入力にはマイクの許可が必要です。</string>
     <string name="physical_keyboard_shortcut_setting_title">物理キーボードショートカット</string>
     <string name="physical_keyboard_shortcut_setting_summary">Ctrl+C、変換キー、無変換キー、Fキーなどにアクションを割り当てます。</string>
     <string name="physical_keyboard_shortcut_list_title">物理キーボードショートカット</string>
@@ -260,9 +268,12 @@
     <string name="omission_search_summary_on">修飾キー省略入力は有効です\nかつこう → がっこう</string>
     <string name="omission_search_summary_off">修飾キー省略入力は無効です</string>
     <string name="flick_sensitivity_title">フリック入力の感度</string>
-    <string name="flick_threshold_shape_title">フリック判定領域</string>
+    <string name="flick_threshold_shape_title">フリック開始の判定領域</string>
     <string name="flick_threshold_shape_radial">全方向で均一（円形・推奨）</string>
-    <string name="flick_threshold_shape_rectangular">斜め入力を安定（矩形）</string>
+    <string name="flick_threshold_shape_rectangular">横・縦方向の距離で判定（矩形）</string>
+    <string name="tfbi_diagonal_recognition_mode_title">2段・3段フリックの斜め判定</string>
+    <string name="tfbi_diagonal_recognition_mode_legacy">従来</string>
+    <string name="tfbi_diagonal_recognition_mode_stable">安定（明確な曲がりを要求）</string>
     <string name="long_press_timeout_preference_title">長押し時間</string>
     <string name="long_press_timeout_preference_summary">長押しと判定するまでの時間を変更します。</string>
     <string name="long_press_timeout_preference_value">%1$d ms</string>
@@ -308,6 +319,9 @@
     <string name="custom_keyboard_suggestion_title">未入力時の表示</string>
     <string name="custom_keyboard_suggestion_summary_on">文字を入力していないときは、カスタムタブの一覧を表示します。</string>
     <string name="custom_keyboard_suggestion_summary_off">文字を入力していないときは、標準の表示（クリップボードなど）のままにします。</string>
+    <string name="custom_keyboard_input_in_empty_areas_title">空白部分でもキー入力</string>
+    <string name="custom_keyboard_input_in_empty_areas_summary_on">空白セルやスペーサーを押すと、最も近いキーを入力します。</string>
+    <string name="custom_keyboard_input_in_empty_areas_summary_off">空白セルやスペーサーでは入力しません。</string>
     <string name="remember_last_custom_keyboard_title">最後に使用したカスタムキーボードを復元</string>
     <string name="remember_last_custom_keyboard_summary_on">カスタムキーボードを開いたとき、前回使用したカスタムキーボードを表示します</string>
     <string name="remember_last_custom_keyboard_summary_off">カスタムキーボードを開いたとき、最初のカスタムキーボードを表示します</string>
@@ -1817,4 +1831,28 @@
     <string name="qwerty_romaji_space_flick_summary">上フリックで、既存のローマ字のスペース設定と反対の幅（半角・全角）の空白を入力します。文字キーの上フリック設定とは独立しています。</string>
     <string name="qwerty_english_space_flick_summary">上フリックで全角スペースを入力します。未確定文字がある場合は確定して全角スペースを挿入します。タップは半角スペースのままです。文字キーの上フリック設定とは独立しています。</string>
     <string name="floating_keyboard_hide">キーボードを非表示</string>
+    <string name="local_font_title">ローカルフォント</string>
+    <string name="local_font_settings_summary">キーボードのラベルとIME内の文字に使うフォントを選択します</string>
+    <string name="local_font_current">現在：%1$s</string>
+    <string name="local_font_standard">標準（既存の表示）</string>
+    <string name="local_font_choose">端末内のフォントを選択</string>
+    <string name="local_font_help">対応形式：静的TTF / OTF、最大32 MiB。選択したフォントはアプリ専用領域に保存され、この端末内にとどまります。フォントに含まれない文字は別のフォントで表示される場合があります。</string>
+    <string name="local_font_loading">フォントを読み込み、検証しています…</string>
+    <string name="local_font_previewing">プレビュー：%1$s</string>
+    <string name="local_font_preview_small_label">小さなガイド・候補のサンプル</string>
+    <string name="local_font_apply">適用</string>
+    <string name="local_font_cancel_selection">選択を取り消す</string>
+    <string name="local_font_cancel_loading">読込を中断</string>
+    <string name="local_font_restore_standard">標準に戻す</string>
+    <string name="local_font_restore_warning">保存したフォントを復元できませんでした。再選択するか、標準表示に戻してください。</string>
+    <string name="local_font_error_unsupported">この形式には対応していません。静的TTFまたはOTFを選択してください。</string>
+    <string name="local_font_error_too_large">フォントが上限の32 MiBを超えています。</string>
+    <string name="local_font_error_invalid">ファイルが空か破損しているか、対応フォントではありません。</string>
+    <string name="local_font_error_storage">フォントを読み込み・保存できませんでした。現在のフォントは引き続き使用されます。</string>
+    <string name="local_font_preview_sample">あいうえお　がぎぐげご　ぱぴぷぺぽ　ぁぃぅぇぉっゃゅょ
+アイウエオ　日本語　漢字変換　𠮷
+ABC abc 0123456789　ＡＢＣ　１２３４５
+！？（）「」ー〜　é é　😀 👨‍👩‍👧‍👦
+空白　変換　確定　検索　return</string>
+    <string name="local_font_preview_small_sample">あいうえお 変換 ABC 123</string>
 </resources>

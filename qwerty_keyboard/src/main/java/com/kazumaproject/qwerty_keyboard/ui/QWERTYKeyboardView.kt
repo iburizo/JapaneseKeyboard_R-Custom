@@ -46,6 +46,10 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.textview.MaterialTextView
 import com.kazumaproject.core.domain.skin.KeyboardSkinId
 import com.kazumaproject.core.ui.skin.KeyboardSkinRegistry
+import com.kazumaproject.core.ui.font.KeyboardFontAware
+import com.kazumaproject.core.ui.font.KeyboardFontApplicator
+import com.kazumaproject.core.ui.font.KeyboardFontGlyphDrawable
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
 import com.kazumaproject.core.data.popup.PopupViewStyle
 import com.kazumaproject.core.data.popup.QwertyPopupViewStyleSet
 import com.kazumaproject.core.data.qwerty.CapsLockState
@@ -97,7 +101,7 @@ import kotlin.math.hypot
  */
 class QWERTYKeyboardView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
-) : ConstraintLayout(context, attrs, defStyleAttr) {
+) : ConstraintLayout(context, attrs, defStyleAttr), KeyboardFontAware {
 
     private val binding: QwertyLayoutBinding
 
@@ -170,6 +174,25 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     private var longPressedPointerId: Int? = null
     private var keyPreviewPopupStyle = PopupViewStyle(100, 28f)
     private var variationPopupStyle = PopupViewStyle(100, 28f)
+    private var keyboardFontSnapshot = KeyboardFontSnapshot()
+
+    override fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        KeyboardFontApplicator.track(this)
+        keyboardFontSnapshot = snapshot
+        KeyboardFontApplicator.applyToTextViews(this, snapshot) { true }
+        allQwertyButtons().forEach { it.setKeyboardFont(snapshot) }
+        variationPopupView?.setKeyboardFont(snapshot)
+        renderShiftKeyDrawable()
+    }
+
+    private fun allQwertyButtons(): Set<QWERTYButton> = buildSet {
+        addAll(defaultQWERTYButtons)
+        addAll(defaultQWERTYButtonsRoman)
+        addAll(numberQWERTYButtons)
+        addAll(numberRowButtons)
+        add(binding.keyTouten)
+        add(binding.keyKuten)
+    }
 
     // ★ ポインターをロックするための変数を追加
     private var lockedPointerId: Int? = null
@@ -447,6 +470,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
         skinColorRestorer.beforeSkinChange(this.keyboardSkinId, skinId)
         this.keyboardSkinId = skinId
         this.themeMode = themeMode
+        updateCapsLockUI(capsLockState.value)
 
         // Int型の currentNightMode から Boolean型の isNightMode を判定
         this.isNightMode = (currentNightMode == Configuration.UI_MODE_NIGHT_YES)
@@ -552,7 +576,8 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
             // 3. 特殊キーへの適用 (specialKeyColorを使用)
             val specialDrawableState =
-                getDynamicNeumorphDrawable(specialKeyColor, radius).constantState
+                getDynamicNeumorphDrawable(specialKeyColor, radius,
+                    com.kazumaproject.core.ui.skin.SkinKeyRole.MODIFIER).constantState
 
             val specialColorStateList = ColorStateList.valueOf(specialKeyTextColor)
 
@@ -577,6 +602,11 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                 }
                 view.setDrawableAlpha(liquidGlassKeyAlphaEnable)
             }
+            KeyboardSkinRegistry.find(keyboardSkinId)?.let { skin ->
+                keySpace.background = skin.keyDrawable(resources, qwerty = true,
+                    role = com.kazumaproject.core.ui.skin.SkinKeyRole.SPACE)
+                keySpace.setTextColor(skin.palette.spaceText)
+            }
         }
     }
 
@@ -585,8 +615,10 @@ class QWERTYKeyboardView @JvmOverloads constructor(
      * @param baseColor キーのメインカラー
      * @param radius キーの角丸の半径 (px)
      */
-    private fun getDynamicNeumorphDrawable(baseColor: Int, radius: Float): Drawable {
-        KeyboardSkinRegistry.find(keyboardSkinId)?.let { return it.keyDrawable(resources, qwerty = true) }
+    private fun getDynamicNeumorphDrawable(baseColor: Int, radius: Float,
+            role: com.kazumaproject.core.ui.skin.SkinKeyRole =
+                com.kazumaproject.core.ui.skin.SkinKeyRole.CHARACTER): Drawable {
+        KeyboardSkinRegistry.find(keyboardSkinId)?.let { return it.keyDrawable(resources, qwerty = true, role = role) }
         // 1. 色の計算
         // ハイライト色: ベース色に白(#FFFFFF)を50%混ぜる（または明るくする）
         val highlightColor = manipulateColor(baseColor, 1.2f) // 輝度を上げる簡易版
@@ -976,15 +1008,20 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                 }
             }
         }
-        binding.keyShift.setImageResource(drawableRes)
+        KeyboardFontGlyphDrawable.setImageResource(binding.keyShift, drawableRes, keyboardFontSnapshot)
     }
 
     // CapsLock UI update extraction
     private fun updateCapsLockUI(state: CapsLockState) {
         // 大文字表示の切り替え
         val allCaps = state.shiftOn || state.capsLockOn
+        val classicLetterKeys: Set<View> = if (keyboardSkinId == KeyboardSkinId.CUPERTINO_CLASSIC) binding.run {
+            setOf(keyQ, keyW, keyE, keyR, keyT, keyY, keyU, keyI, keyO, keyP,
+                keyA, keyS, keyD, keyF, keyG, keyH, keyJ, keyK, keyL,
+                keyZ, keyX, keyC, keyV, keyB, keyN, keyM)
+        } else emptySet()
         qwertyButtonMap.keys.forEach { button ->
-            if (button is AppCompatButton) button.isAllCaps = allCaps
+            if (button is AppCompatButton) button.isAllCaps = allCaps || button in classicLetterKeys
         }
         // Shift キーの drawable は renderShiftKeyDrawable() に集約。
         renderShiftKeyDrawable()
@@ -2538,7 +2575,8 @@ class QWERTYKeyboardView @JvmOverloads constructor(
             val h = geometry.height
             val xOffset = geometry.xOffset
             val content = android.widget.TextView(context).apply {
-                text = if (capsLockState.value.capsLockOn || capsLockState.value.shiftOn) label.uppercase() else label
+                text = if (keyboardSkinId == KeyboardSkinId.CUPERTINO_CLASSIC ||
+                    capsLockState.value.capsLockOn || capsLockState.value.shiftOn) label.uppercase() else label
                 setTextColor(skin.palette.text)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 32f)
                 gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
@@ -2548,6 +2586,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                 setPadding((shift*2).toInt().coerceAtLeast(0),paddingTop,(-shift*2).toInt().coerceAtLeast(0),0)
                 background = geometry.background
             }
+            KeyboardFontApplicator.apply(content, keyboardFontSnapshot)
             val popup = PopupWindow(content, w, h, false).apply {
                 isTouchable = false
                 elevation = 0f
@@ -2620,6 +2659,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
             is AppCompatImageButton -> tv.text = ""
             else -> tv.text = ""
         }
+        KeyboardFontApplicator.apply(tv, keyboardFontSnapshot)
 
         val scale = keyPreviewPopupStyle.sizeScalePercent.coerceIn(50, 200) / 100f
         val popupWidth = (view.width * 2 * scale).toInt().coerceAtLeast(1)
@@ -2826,6 +2866,10 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     private fun onShiftDoubleTapped() {
         if (qwertyMode.value == QWERTYMode.Default) {
             enableCapsLock()
+            // The second tap enables Caps Lock on ACTION_DOWN and its ACTION_UP is
+            // intentionally suppressed. Notify the input side here so it can keep
+            // Caps Lock across a committed composition.
+            notifyQwertyShiftStateChanged()
         }
     }
 
@@ -2863,6 +2907,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
         variationPopupView = VariationsPopupView(context).apply {
             applyPopupViewStyle(if (skin != null) variationPopupStyle.copy(skinId = keyboardSkinId) else variationPopupStyle)
             setChars(variations)
+            setKeyboardFont(keyboardFontSnapshot)
         }
         when (themeMode) {
             "custom" -> {
