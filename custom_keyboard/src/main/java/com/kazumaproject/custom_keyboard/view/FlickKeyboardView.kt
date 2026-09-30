@@ -3232,25 +3232,23 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 keyData.action is KeyAction.MoveCursorRight ||
                                 keyData.action is KeyAction.MoveCursorUp ||
                                 keyData.action is KeyAction.MoveCursorDown
+                        val tapAction = currentLayout?.flickKeyMaps?.get(keyData.label)?.firstOrNull()?.get(FlickDirection.TAP)
+                        val isDeleteKey = keyData.action is KeyAction.Delete ||
+                                keyData.keyId?.contains("delete", ignoreCase = true) == true ||
+                                keyData.label.contains("Del", ignoreCase = true) ||
+                                (tapAction as? FlickAction.Action)?.action is KeyAction.Delete
+
                         if (isArrow && cursorKeySwipeMoveEnableProvider()) {
                             isCursorSwipeActive = true
                             swipePointerId = pointerId
                             cursorInitialX = event.x
                             cursorInitialY = event.y
-                        } else {
-                            val tapAction = currentLayout?.flickKeyMaps?.get(keyData.label)?.firstOrNull()?.get(FlickDirection.TAP)
-                            val isDeleteKey = keyData.action is KeyAction.Delete ||
-                                    keyData.keyId?.contains("delete", ignoreCase = true) == true ||
-                                    keyData.label.contains("Del", ignoreCase = true) ||
-                                    (tapAction as? FlickAction.Action)?.action is KeyAction.Delete
-
-                            if (isDeleteKey && !isComposing && deleteKeySwipeSelectionEnableProvider()) {
-                                isDeleteSwipeActive = true
-                                swipePointerId = pointerId
-                                cursorInitialX = event.x
-                                cursorInitialY = event.y
-                                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler?.invoke()
-                            }
+                        } else if (isDeleteKey && !isComposing && deleteKeySwipeSelectionEnableProvider()) {
+                            isDeleteSwipeActive = true
+                            swipePointerId = pointerId
+                            cursorInitialX = event.x
+                            cursorInitialY = event.y
+                            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler?.invoke()
                         }
                     }
                     dispatchPointerEvent(
