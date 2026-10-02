@@ -141,6 +141,19 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     private val deferredPopupDismissals = mutableMapOf<PopupWindow, Runnable>()
     private val hitRect = Rect()
 
+    // [CUSTOM] Swipe features variables (mirrored from FlickKeyboardView)
+    var isComposing = false
+    var cursorKeySwipeMoveEnableProvider: () -> Boolean = { false }
+    var isDebugModeEnabled = false
+    var deleteKeySwipeSelectionEnableProvider: () -> Boolean = { false }
+    var onSelectionDeleteSwipeStartHandler: (() -> Unit)? = null
+    var onSelectionDeleteSwipeUpdateHandler: ((Int, Int) -> Unit)? = null
+    var onSelectionDeleteSwipeEndHandler: (() -> Unit)? = null
+    private var isCursorSwipeActive = false
+    private var isDeleteSwipeActive = false
+    private var swipePointerId = -1
+    private var swipeCancelDispatched = false
+
     private var qwertyKeyListener: QWERTYKeyListener? = null
     private var qwertyKeyTouchCancelListener: QwertyKeyTouchCancelListener? = null
     private var qwertyKeyMap: QWERTYKeyMap
@@ -1496,6 +1509,41 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
 
+        if (isDeleteSwipeActive && swipePointerId != -1) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_MOVE -> {
+                    val idx = event.findPointerIndex(swipePointerId)
+                    if (idx != -1) {
+                        val currentX = event.x
+                        val currentY = event.y
+                        val dx = currentX - cursorInitialX
+                        val dy = currentY - cursorInitialY
+                        
+                        if (!swipeCancelDispatched && (kotlin.math.abs(dx) > 10f || kotlin.math.abs(dy) > 10f)) {
+                            swipeCancelDispatched = true
+                            cancelLongPressForPointer(swipePointerId)
+                        }
+                        val deltaX = (dx / 40f).toInt()
+                        val deltaY = (dy / 40f).toInt()
+                        onSelectionDeleteSwipeUpdateHandler?.invoke(deltaX, deltaY)
+                        if (isDebugModeEnabled) invalidate()
+                        return true
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    onSelectionDeleteSwipeEndHandler?.invoke()
+                    val wasCancelled = swipeCancelDispatched
+                    isDeleteSwipeActive = false
+                    swipePointerId = -1
+                    if (isDebugModeEnabled) invalidate()
+                    if (wasCancelled) {
+                        clearAllPressed()
+                        return true
+                    }
+                }
+            }
+        }
+
         if (isCursorMode) {
             when (event.actionMasked) {
                 MotionEvent.ACTION_MOVE -> {
@@ -1505,6 +1553,11 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
                     val dx = currentX - cursorInitialX
                     val dy = currentY - cursorInitialY
+
+                    if (!swipeCancelDispatched && (abs(dx) > 10f || abs(dy) > 10f)) {
+                        swipeCancelDispatched = true
+                        cancelLongPressForPointer(swipePointerId)
+                    }
 
                     if (abs(dx) > abs(dy) && abs(dx) > threshold) {
                         val direction =
@@ -2139,6 +2192,9 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
         pointerStartCoords.put(pid, Pair(x, y))
         flickLockedPointers.remove(pid)
+        isCursorSwipeActive = false
+        isDeleteSwipeActive = false
+        swipeCancelDispatched = false
 
         val view = findButtonUnder(x.toInt(), y.toInt())
         view?.let {
@@ -2148,6 +2204,25 @@ class QWERTYKeyboardView @JvmOverloads constructor(
             }
             it.isPressed = true
             pointerButtonMap.put(pid, it)
+            
+            // [CUSTOM] Swipe cursor/delete processing
+            val isArrow = it.id == binding.cursorLeft.id || it.id == binding.cursorRight.id
+            val isDeleteKey = it.id == binding.keyDelete.id
+
+            if (isArrow && cursorKeySwipeMoveEnableProvider()) {
+                isCursorSwipeActive = true
+                swipePointerId = pid
+                cursorInitialX = x
+                cursorInitialY = y
+                if (isDebugModeEnabled) invalidate()
+            } else if (isDeleteKey && !isComposing && deleteKeySwipeSelectionEnableProvider()) {
+                isDeleteSwipeActive = true
+                swipePointerId = pid
+                cursorInitialX = x
+                cursorInitialY = y
+                onSelectionDeleteSwipeStartHandler?.invoke()
+                if (isDebugModeEnabled) invalidate()
+            }
 
             if (it.id == binding.keyShift.id) {
                 val now = SystemClock.uptimeMillis()
@@ -2805,6 +2880,18 @@ class QWERTYKeyboardView @JvmOverloads constructor(
         val last = glideTrailPoints.last()
         glideTrailPath.lineTo(last.first, last.second)
         canvas.drawPath(glideTrailPath, glideTrailPaint)
+        
+        if (isDebugModeEnabled) {
+            val paint = Paint().apply {
+                color = Color.RED
+                textSize = 40f
+                isAntiAlias = true
+            }
+            var y = 50f
+            canvas.drawText("isCursor: $isCursorSwipeActive, isDelete: $isDeleteSwipeActive", 20f, y, paint); y += 50f
+            canvas.drawText("isComposing: $isComposing", 20f, y, paint); y += 50f
+            canvas.drawText("cancel: $swipeCancelDispatched", 20f, y, paint); y += 50f
+        }
     }
 
     private fun logVariationIfNeeded(key: QWERTYKey) {
