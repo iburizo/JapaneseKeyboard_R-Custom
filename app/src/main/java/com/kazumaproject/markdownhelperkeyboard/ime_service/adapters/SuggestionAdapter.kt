@@ -31,6 +31,10 @@ import com.kazumaproject.core.domain.extensions.isAllHalfWidthNumericSymbol
 import com.kazumaproject.core.domain.extensions.isDarkThemeOn
 import com.kazumaproject.core.domain.extensions.setDrawableSolidColor
 import com.kazumaproject.core.domain.state.TenKeyQWERTYMode
+import com.kazumaproject.core.ui.font.KeyboardFontApplicator
+import com.kazumaproject.core.ui.font.KeyboardFontGlyphDrawable
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
+import com.kazumaproject.markdownhelperkeyboard.setting_activity.AppPreference
 import com.kazumaproject.markdownhelperkeyboard.R
 import com.kazumaproject.markdownhelperkeyboard.converter.candidate.CANDIDATE_TYPE_ERA
 import com.kazumaproject.markdownhelperkeyboard.converter.candidate.CANDIDATE_TYPE_CALCULATION
@@ -69,6 +73,8 @@ internal class CandidateItemColorState {
         private set
     var pressedBackgroundColor: Int? = null
         private set
+    var cornerRadiusDp: Float = 16f
+        private set
 
     fun setBackgroundColor(color: Int): Boolean {
         if (backgroundColor == color) return false
@@ -82,23 +88,52 @@ internal class CandidateItemColorState {
         return true
     }
 
-    fun setColors(backgroundColor: Int?, pressedBackgroundColor: Int?): Boolean {
+    fun setColors(
+        backgroundColor: Int?,
+        pressedBackgroundColor: Int?,
+        cornerRadiusDp: Float = 16f,
+    ): Boolean {
         if (
             this.backgroundColor == backgroundColor &&
-            this.pressedBackgroundColor == pressedBackgroundColor
+            this.pressedBackgroundColor == pressedBackgroundColor &&
+            this.cornerRadiusDp == cornerRadiusDp
         ) {
             return false
         }
         this.backgroundColor = backgroundColor
         this.pressedBackgroundColor = pressedBackgroundColor
+        this.cornerRadiusDp = cornerRadiusDp
         return true
     }
+}
+
+internal fun createCandidateItemBackgroundDrawable(
+    backgroundColor: Int,
+    pressedColor: Int,
+    density: Float,
+    cornerRadiusDp: Float,
+): StateListDrawable = StateListDrawable().apply {
+    addState(
+        intArrayOf(android.R.attr.state_pressed),
+        GradientDrawable().apply {
+            setColor(pressedColor)
+            cornerRadius = cornerRadiusDp * density
+        },
+    )
+    addState(
+        intArrayOf(),
+        GradientDrawable().apply {
+            setColor(backgroundColor)
+            cornerRadius = cornerRadiusDp * density
+        },
+    )
 }
 
 internal data class CandidateYomiPresentation(
     val isVisible: Boolean,
     val text: String,
-    val textSize: Float
+    val textSize: Float,
+    val annotations: List<CandidateRubyAnnotation>? = null,
 )
 
 /**
@@ -117,7 +152,8 @@ internal fun resolveCandidateYomiPresentation(
     showCandidateYomiForLiveConversion: Boolean,
     isFirstCandidate: Boolean,
     suggestion: Candidate,
-    candidateTextSize: Float
+    readingTextSize: Float,
+    readingMode: String = AppPreference.CANDIDATE_YOMI_MODE_WHOLE,
 ): CandidateYomiPresentation {
     val yomi = suggestion.yomi
     val shouldShowYomi =
@@ -125,10 +161,18 @@ internal fun resolveCandidateYomiPresentation(
                 isFirstCandidate &&
                 !yomi.isNullOrBlank() &&
                 yomi != suggestion.string
+    val annotations = if (
+        shouldShowYomi && suggestion.type != 15.toByte() &&
+        readingMode == AppPreference.CANDIDATE_YOMI_MODE_RUBY
+    ) {
+        resolveCandidateRubyAnnotations(suggestion.string, yomi.orEmpty(), suggestion.conversionSegments)
+    } else null
+    val visible = shouldShowYomi && (annotations == null || annotations.isNotEmpty())
     return CandidateYomiPresentation(
-        isVisible = shouldShowYomi,
-        text = if (shouldShowYomi) yomi.orEmpty() else "",
-        textSize = candidateTextSize * 0.72f
+        isVisible = visible,
+        text = if (!visible) "" else annotations?.joinToString(" ") { it.reading } ?: yomi.orEmpty(),
+        textSize = readingTextSize,
+        annotations = annotations,
     )
 }
 
@@ -136,8 +180,40 @@ class SuggestionAdapter internal constructor(
     private val backgroundDiffExecutor: Executor = diffExecutor
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    private var keyboardFontSnapshot = KeyboardFontApplicator.processSnapshot
+
+    fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        if (keyboardFontSnapshot == snapshot) return
+        keyboardFontSnapshot = snapshot
+        notifyDataSetChanged()
+    }
+
+    private fun applyKeyboardFont(holder: RecyclerView.ViewHolder) {
+        when (holder) {
+            is SuggestionViewHolder -> {
+                KeyboardFontApplicator.apply(holder.text, keyboardFontSnapshot)
+                KeyboardFontApplicator.apply(holder.yomiText, keyboardFontSnapshot)
+                KeyboardFontApplicator.apply(holder.typeText, keyboardFontSnapshot)
+            }
+            is SelectionActionViewHolder -> {
+                KeyboardFontApplicator.apply(holder.badgeText, keyboardFontSnapshot)
+                KeyboardFontApplicator.apply(holder.actionText, keyboardFontSnapshot)
+            }
+            is InlineSuggestionToggleViewHolder -> KeyboardFontApplicator.apply(holder.badgeText, keyboardFontSnapshot)
+            is ZeroQueryViewHolder -> KeyboardFontApplicator.apply(holder.text, keyboardFontSnapshot)
+            is ClipboardPreviewViewHolder -> {
+                holder.clipboardPreviewText?.let { KeyboardFontApplicator.apply(it, keyboardFontSnapshot) }
+                holder.clipboardPreviewTextDescription?.let { KeyboardFontApplicator.apply(it, keyboardFontSnapshot) }
+            }
+            is CustomLayoutViewHolder -> KeyboardFontApplicator.apply(holder.nameTextView, keyboardFontSnapshot)
+            // Icon-only shortcuts/actions and framework-owned inline suggestions keep their
+            // icon/framework typography.
+        }
+    }
+
     companion object {
         private const val FLOATING_VIEW_TYPE_OFFSET = 10000
+        private const val DEFAULT_CANDIDATE_DIVIDER_VERTICAL_MARGIN_DP = 18
         const val VIEW_TYPE_EMPTY = 0
         const val VIEW_TYPE_SUGGESTION = 1
         const val VIEW_TYPE_CUSTOM_LAYOUT_PICKER = 2
@@ -325,6 +401,10 @@ class SuggestionAdapter internal constructor(
 
     private var candidateTextSize: Float = 14f
     private var candidateTextColor: Int? = null
+    private var candidateDividerColor: Int? = null
+    private var candidateDividerVerticalMarginDp: Int? = null
+    private var candidateYomiTextSize: Float = AppPreference.DEFAULT_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE.toFloat()
+    private var candidateYomiMode: String = AppPreference.CANDIDATE_YOMI_MODE_WHOLE
     private var showCandidateYomiForLiveConversion: Boolean = false
     private var showDictionaryCandidateLabels: Boolean = false
     private val candidateItemColorState = CandidateItemColorState()
@@ -353,16 +433,22 @@ class SuggestionAdapter internal constructor(
         showIntegratedShortcutEntry = source.showIntegratedShortcutEntry
         integratedShortcutEntryExpanded = source.integratedShortcutEntryExpanded
         shortcutIconColor = source.shortcutIconColor
+        inlineSuggestionIconBackgroundTint = source.inlineSuggestionIconBackgroundTint
         activeShortcutTypes = source.activeShortcutTypes
         incognitoIconDrawable = source.incognitoIconDrawable
+        candidateYomiTextSize = source.candidateYomiTextSize
+        candidateYomiMode = source.candidateYomiMode
         candidateTextSize = source.candidateTextSize
         candidateTextColor = source.candidateTextColor
+        candidateDividerColor = source.candidateDividerColor
+        candidateDividerVerticalMarginDp = source.candidateDividerVerticalMarginDp
         showCandidateYomiForLiveConversion = source.showCandidateYomiForLiveConversion
         showDictionaryCandidateLabels = source.showDictionaryCandidateLabels
         candidateEmptyDrawableColor = source.candidateEmptyDrawableColor
         candidateEmptyDrawableTextColor = source.candidateEmptyDrawableTextColor
         showCustomTab = false
-        candidateItemColorState.setColors(source.candidateItemColorState.backgroundColor, source.candidateItemColorState.pressedBackgroundColor)
+        candidateItemColorState.setColors(source.candidateItemColorState.backgroundColor,
+            source.candidateItemColorState.pressedBackgroundColor, source.candidateItemColorState.cornerRadiusDp)
         onItemClickListener = { a, b -> source.onItemClickListener?.invoke(a, b) }
         onItemLongClickListener = { a, b -> source.onItemLongClickListener?.invoke(a, b) }
         onItemHelperIconClickListener = { a -> source.onItemHelperIconClickListener?.invoke(a) }
@@ -424,6 +510,7 @@ class SuggestionAdapter internal constructor(
 
     fun release() {
         attachedRecyclerViews.keys.toList().forEach { recyclerView ->
+            CandidateReadingViewport.release(recyclerView)
             detachInlineSuggestionViews(recyclerView)
             attachedRecyclerViews.remove(recyclerView)?.let(recyclerView::removeItemDecoration)
             inlineScrollListeners.remove(recyclerView)?.let(recyclerView::removeOnScrollListener)
@@ -1330,7 +1417,10 @@ class SuggestionAdapter internal constructor(
             }
 
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
-        }.also { visitAppearanceViews(it.itemView, capture = true) }
+    }.also {
+        visitAppearanceViews(it.itemView, capture = true)
+        applyKeyboardFont(it)
+    }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -1355,9 +1445,9 @@ class SuggestionAdapter internal constructor(
                         item,
                     )
 
-                    else -> Unit
-                }
-            }
+            else -> Unit
+        }
+    }
 
             VIEW_TYPE_ZERO_QUERY_CLOSE -> onBindZeroQueryCloseViewHolder(
                 holder as ZeroQueryViewHolder,
@@ -1399,6 +1489,7 @@ class SuggestionAdapter internal constructor(
                 item as SuggestionDisplayItem.CustomLayoutItem,
             )
         }
+        applyKeyboardFont(holder)
         styleFloatingItem(holder, position)
     }
 
@@ -1410,6 +1501,14 @@ class SuggestionAdapter internal constructor(
         val colors = floatingPanelColors ?: com.kazumaproject.markdownhelperkeyboard.ime_service.composing_guide.CandidatePanelColors.resolve(root.context)
         val ink = colors.text
         if (holder is ShortcutViewHolder || holder is ShortcutEntryViewHolder) {
+            if (colors.cupertinoClassic) {
+                root.background = android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(colors.pressed, 100)),
+                    null,
+                    android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT),
+                )
+                return
+            }
             root.background = android.graphics.drawable.RippleDrawable(
                 android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(colors.pressed, 100)),
                 null, GradientDrawable().apply { cornerRadius = dp(10).toFloat(); setColor(android.graphics.Color.WHITE) })
@@ -1440,12 +1539,17 @@ class SuggestionAdapter internal constructor(
                 holder.yomiText.setTextColor(if (selected) colors.selectionText else ink)
                 holder.formulaView.setFormulaTextColor(if (selected) colors.selectionText else ink)
             }
-            root.findViewById<View>(R.id.candidate_divider)?.visibility = View.GONE
+            root.findViewById<View>(R.id.candidate_divider)?.apply {
+                visibility = if (colors.cupertinoClassic) View.VISIBLE else View.GONE
+                if (colors.cupertinoClassic) setBackgroundColor(
+                    com.kazumaproject.markdownhelperkeyboard.ime_service.composing_guide.CupertinoClassicCandidateChrome.dividerColor
+                )
+            }
         }
         val chip = GradientDrawable().apply {
-            cornerRadius = dp(10).toFloat()
+            cornerRadius = if (colors.cupertinoClassic) 0f else dp(10).toFloat()
             setColor(if (selected) colors.selection else colors.candidate)
-            setStroke(dp(1), androidx.core.graphics.ColorUtils.setAlphaComponent(ink, 24))
+            if (!colors.cupertinoClassic) setStroke(dp(1), androidx.core.graphics.ColorUtils.setAlphaComponent(ink, 24))
         }
         root.background = android.graphics.drawable.RippleDrawable(
             android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(colors.pressed, 100)), chip, null)
@@ -1501,6 +1605,7 @@ class SuggestionAdapter internal constructor(
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        CandidateReadingViewport.release(recyclerView)
         detachInlineSuggestionViews(recyclerView)
         attachedRecyclerViews.remove(recyclerView)?.let(recyclerView::removeItemDecoration)
         inlineScrollListeners.remove(recyclerView)?.let(recyclerView::removeOnScrollListener)
@@ -1868,7 +1973,11 @@ class SuggestionAdapter internal constructor(
     ) {
         val shortcutType = item.shortcutType
         holder.imageView.apply {
-            setImageResource(shortcutType.resolveShortcutIconResId())
+            KeyboardFontGlyphDrawable.setImageResource(
+                this,
+                shortcutType.resolveShortcutIconResId(),
+                keyboardFontSnapshot,
+            )
             contentDescription = shortcutType.description
             shortcutIconColor?.let { color ->
                 setColorFilter(color, PorterDuff.Mode.SRC_IN)
@@ -1926,6 +2035,18 @@ class SuggestionAdapter internal constructor(
         notifyItemRangeChanged(0, itemCount)
     }
 
+    fun setCandidateYomiTextSize(size: Float) {
+        if (candidateYomiTextSize == size) return
+        candidateYomiTextSize = size
+        notifyItemRangeChanged(0, itemCount)
+    }
+
+    fun setCandidateYomiMode(mode: String) {
+        if (candidateYomiMode == mode) return
+        candidateYomiMode = mode
+        notifyItemRangeChanged(0, itemCount)
+    }
+
     fun setShowCandidateYomiForLiveConversion(enabled: Boolean) {
         if (showCandidateYomiForLiveConversion == enabled) return
         showCandidateYomiForLiveConversion = enabled
@@ -1955,8 +2076,15 @@ class SuggestionAdapter internal constructor(
         notifyItemRangeChanged(0, itemCount)
     }
 
-    fun setCandidateItemColors(backgroundColor: Int?, pressedColor: Int?) {
-        if (!candidateItemColorState.setColors(backgroundColor, pressedColor)) return
+    fun setCandidateItemColors(backgroundColor: Int?, pressedColor: Int?, cornerRadiusDp: Float = 16f) {
+        if (!candidateItemColorState.setColors(backgroundColor, pressedColor, cornerRadiusDp)) return
+        notifyItemRangeChanged(0, itemCount)
+    }
+
+    fun setCandidateDividerColor(color: Int?, verticalMarginDp: Int? = null) {
+        if (candidateDividerColor == color && candidateDividerVerticalMarginDp == verticalMarginDp) return
+        candidateDividerColor = color
+        candidateDividerVerticalMarginDp = verticalMarginDp
         notifyItemRangeChanged(0, itemCount)
     }
 
@@ -2029,16 +2157,18 @@ class SuggestionAdapter internal constructor(
             showCandidateYomiForLiveConversion = showCandidateYomiForLiveConversion,
             isFirstCandidate = position == 0,
             suggestion = suggestion,
-            candidateTextSize = candidateTextSize
+            readingTextSize = candidateYomiTextSize,
+            readingMode = candidateYomiMode
         )
         holder.yomiText.isVisible = yomiPresentation.isVisible && !isFormula
         holder.yomiText.text = yomiPresentation.text
-        holder.yomiText.textSize = yomiPresentation.textSize
-        holder.yomiText.translationX = if (yomiPresentation.isVisible) {
-            holder.text.paint.measureText(" ".repeat(paddingLength))
-        } else {
-            0f
-        }
+        (holder.yomiText as CandidateReadingTextView).setRubyAnnotations(
+            yomiPresentation.annotations, paddingLength
+        )
+        holder.yomiText.textSize = if (yomiPresentation.isVisible) {
+            CandidateReadingSizeLimits.clamp(
+                holder.itemView.context, yomiPresentation.textSize)
+        } else yomiPresentation.textSize
 
         candidateTextColor?.let { color ->
             holder.text.setTextColor(color)
@@ -2150,6 +2280,11 @@ class SuggestionAdapter internal constructor(
             GemmaTranslationManager.SELECTION_PROMPT_ACTION_CANDIDATE_TYPE.toByte() -> "[AI]"
             else -> ""
         }
+        val categoryLabel = classifiedCandidateLabel(holder.itemView.context, suggestion.dictionaryCategories)
+        if (categoryLabel.isNotEmpty()) {
+            holder.typeText.text = android.text.SpannableStringBuilder(holder.typeText.text)
+                .append(if (holder.typeText.text.isEmpty()) "" else " ").append(categoryLabel)
+        }
         holder.itemView.isPressed = position == highlightedPosition
         holder.itemView.setOnClickListener {
             onItemClickListener?.invoke(suggestion, position)
@@ -2253,6 +2388,14 @@ class SuggestionAdapter internal constructor(
         }
     }
 
+    private var inlineSuggestionIconBackgroundTint: android.content.res.ColorStateList? = null
+
+    internal fun setInlineSuggestionIconBackgroundTint(tint: android.content.res.ColorStateList?) {
+        if (inlineSuggestionIconBackgroundTint == tint) return
+        inlineSuggestionIconBackgroundTint = tint
+        notifyItemRangeChanged(0, itemCount)
+    }
+
     private fun onBindInlineSuggestionToggleViewHolder(
         holder: InlineSuggestionToggleViewHolder,
         item: SuggestionDisplayItem.InlineSuggestionToggleItem,
@@ -2261,10 +2404,15 @@ class SuggestionAdapter internal constructor(
         holder.badgeText.text = item.toggle.badge.orEmpty()
         holder.badgeText.isVisible = !item.toggle.badge.isNullOrEmpty()
         holder.badgeIcon.isVisible = item.toggle.iconResId != null
+        holder.badgeIcon.backgroundTintList = inlineSuggestionIconBackgroundTint
         holder.badgeIcon.background = item.toggle.iconBackgroundResId?.let { backgroundResId ->
             ContextCompat.getDrawable(holder.itemView.context, backgroundResId)
         }
-        item.toggle.iconResId?.let(holder.badgeIcon::setImageResource)
+        // Reload even when the resource is unchanged: clearing ImageView tint on reuse
+        // also clears the vector's XML tint, which setImageResource would otherwise retain.
+        holder.badgeIcon.setImageDrawable(item.toggle.iconResId?.let { iconResId ->
+            ContextCompat.getDrawable(holder.itemView.context, iconResId)?.mutate()
+        })
         holder.itemView.contentDescription = item.toggle.contentDescription
         candidateTextColor?.let { color ->
             holder.badgeText.setTextColor(color)
@@ -2290,30 +2438,39 @@ class SuggestionAdapter internal constructor(
     private fun applyCandidateItemBackground(itemView: View) {
         val backgroundColor = candidateItemColorState.backgroundColor
         val pressedColor = candidateItemColorState.pressedBackgroundColor
+        itemView.findViewById<View>(R.id.candidate_divider)?.let { divider ->
+            divider.setBackgroundColor(
+                candidateDividerColor ?: ContextCompat.getColor(
+                    itemView.context,
+                    com.kazumaproject.core.R.color.sub_text_color,
+                )
+            )
+            (divider.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+                val density = itemView.resources.displayMetrics.density
+                val verticalMargin = (
+                    (candidateDividerVerticalMarginDp ?: DEFAULT_CANDIDATE_DIVIDER_VERTICAL_MARGIN_DP) * density
+                ).toInt()
+                if (params.topMargin != verticalMargin || params.bottomMargin != verticalMargin) {
+                    params.topMargin = verticalMargin
+                    params.bottomMargin = verticalMargin
+                    divider.layoutParams = params
+                }
+            }
+        }
         if (backgroundColor == null && pressedColor == null) {
             itemView.setBackgroundResource(defaultCandidateItemBackgroundRes())
             return
         }
 
-        itemView.background = StateListDrawable().apply {
-            addState(
-                intArrayOf(android.R.attr.state_pressed),
-                createCandidateItemDrawable(
-                    pressedColor ?: ContextCompat.getColor(
-                        itemView.context,
-                        com.kazumaproject.core.R.color.qwety_key_bg_color
-                    ),
-                    itemView.context.resources.displayMetrics.density
-                )
-            )
-            addState(
-                intArrayOf(),
-                createCandidateItemDrawable(
-                    backgroundColor ?: Color.TRANSPARENT,
-                    itemView.context.resources.displayMetrics.density
-                )
-            )
-        }
+        itemView.background = createCandidateItemBackgroundDrawable(
+            backgroundColor ?: Color.TRANSPARENT,
+            pressedColor ?: ContextCompat.getColor(
+                itemView.context,
+                com.kazumaproject.core.R.color.qwety_key_bg_color,
+            ),
+            itemView.context.resources.displayMetrics.density,
+            candidateItemColorState.cornerRadiusDp,
+        )
     }
 
     private fun defaultCandidateItemBackgroundRes(): Int {
@@ -2321,13 +2478,6 @@ class SuggestionAdapter internal constructor(
             com.kazumaproject.core.R.drawable.recyclerview_item_bg_material
         } else {
             com.kazumaproject.core.R.drawable.recyclerview_item_bg
-        }
-    }
-
-    private fun createCandidateItemDrawable(color: Int, density: Float): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = 16f * density
         }
     }
 

@@ -3,6 +3,7 @@ package com.kazumaproject.custom_keyboard
 import com.kazumaproject.custom_keyboard.data.FlickAction
 import com.kazumaproject.custom_keyboard.data.FlickDirection
 import com.kazumaproject.custom_keyboard.data.KeyAction
+import com.kazumaproject.custom_keyboard.data.KeyActionMapper
 import com.kazumaproject.custom_keyboard.data.KeyData
 import com.kazumaproject.custom_keyboard.data.KeyType
 import com.kazumaproject.custom_keyboard.data.ResolvedSumireSpecialKeyAction
@@ -26,8 +27,20 @@ class SumireSpecialKeyDisplayActionMapTest {
         }
 
         assertEquals(FlickAction.Action(KeyAction.Space), displayMap[FlickDirection.TAP])
-        assertEquals(FlickAction.Action(KeyAction.Delete), displayMap[FlickDirection.UP])
-        assertEquals(FlickAction.Action(KeyAction.Enter), displayMap[FlickDirection.UP_RIGHT_FAR])
+        assertEquals(
+            FlickAction.Action(
+                KeyAction.Delete,
+                drawableResId = KeyActionMapper.iconResIdForAction(KeyAction.Delete)
+            ),
+            displayMap[FlickDirection.UP]
+        )
+        assertEquals(
+            FlickAction.Action(
+                KeyAction.Enter,
+                drawableResId = KeyActionMapper.iconResIdForAction(KeyAction.Enter)
+            ),
+            displayMap[FlickDirection.UP_RIGHT_FAR]
+        )
     }
 
     @Test
@@ -85,7 +98,13 @@ class SumireSpecialKeyDisplayActionMapTest {
             }
         }
 
-        assertEquals(FlickAction.Action(KeyAction.Copy), displayMap[FlickDirection.UP_LEFT_FAR])
+        assertEquals(
+            FlickAction.Action(
+                KeyAction.Copy,
+                drawableResId = KeyActionMapper.iconResIdForAction(KeyAction.Copy)
+            ),
+            displayMap[FlickDirection.UP_LEFT_FAR]
+        )
     }
 
     @Test

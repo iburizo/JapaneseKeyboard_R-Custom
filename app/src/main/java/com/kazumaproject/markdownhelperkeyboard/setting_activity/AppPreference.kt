@@ -10,13 +10,18 @@ import com.google.gson.reflect.TypeToken
 import com.kazumaproject.core.domain.skin.KeyboardSkinId
 import com.kazumaproject.core.data.clicked_symbol.SymbolMode
 import com.kazumaproject.core.domain.flick.FlickThresholdShape
+import com.kazumaproject.core.domain.flick.TfbiDiagonalRecognitionMode
 import com.kazumaproject.core.data.popup.TfbiFlickStartPositionMode
 import com.kazumaproject.core.data.popup.TfbiPopupPresentationMode
 import com.kazumaproject.custom_keyboard.data.CircularFlickDirection
 import com.kazumaproject.custom_keyboard.data.KeyboardInputMode
+import com.kazumaproject.custom_keyboard.data.SumireFlickInputMode
+import com.kazumaproject.custom_keyboard.data.TfbiFlickRotation
 import com.kazumaproject.custom_keyboard.data.buildEvenCircularRanges
 import com.kazumaproject.domain.EmojiSkinToneSupport
 import com.kazumaproject.markdownhelperkeyboard.converter.engine.PredictionConfig
+import com.kazumaproject.markdownhelperkeyboard.converter.date.DateCandidateConfig
+import com.kazumaproject.markdownhelperkeyboard.converter.date.DateCandidateFormat
 import com.kazumaproject.markdownhelperkeyboard.converter.utility.AngleMode
 import com.kazumaproject.markdownhelperkeyboard.converter.utility.Precision
 import com.kazumaproject.markdownhelperkeyboard.converter.utility.RegionalUnitProfile
@@ -28,11 +33,15 @@ import com.kazumaproject.markdownhelperkeyboard.ime_service.image_effect.Keyboar
 import com.kazumaproject.markdownhelperkeyboard.ime_service.image_effect.SprayPaintSettings
 import com.kazumaproject.markdownhelperkeyboard.ime_service.state.CandidateTab
 import com.kazumaproject.markdownhelperkeyboard.ime_service.state.KeyboardType
+import com.kazumaproject.markdownhelperkeyboard.ime_service.voice_input.VoiceInputSettings
+import com.kazumaproject.markdownhelperkeyboard.ime_service.voice_input.VoiceInputSpaceReplacement
 import com.kazumaproject.markdownhelperkeyboard.gemma.handwriting.GemmaHandwritingLanguage
 import com.kazumaproject.markdownhelperkeyboard.gemma.handwriting.GemmaHandwritingSettings
 import com.kazumaproject.markdownhelperkeyboard.setting_activity.backup.PrefBackup
 import com.kazumaproject.markdownhelperkeyboard.setting_activity.backup.PrefEntry
 import com.kazumaproject.markdownhelperkeyboard.setting_activity.circular_slot.CircularSlotActionSetting
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import com.kazumaproject.core.R as CoreR
 
 internal object CustomThemeColorPreferenceKeys {
@@ -45,6 +54,38 @@ internal object CustomThemeColorPreferenceKeys {
 }
 
 object AppPreference {
+
+    const val VOICE_INPUT_SPACE_REPLACEMENT_ENABLED_KEY = "voice_input_space_replacement_enabled"
+    const val VOICE_INPUT_SPACE_REPLACEMENT_KEY = "voice_input_space_replacement"
+    const val VOICE_INPUT_SPACE_CUSTOM_TEXT_KEY = "voice_input_space_custom_text"
+
+    var voice_input_space_replacement_enabled: Boolean
+        get() = preferences.getBoolean(VOICE_INPUT_SPACE_REPLACEMENT_ENABLED_KEY, false)
+        set(value) = preferences.edit {
+            it.putBoolean(VOICE_INPUT_SPACE_REPLACEMENT_ENABLED_KEY, value)
+        }
+
+    var voice_input_space_replacement: String
+        get() = preferences.getString(VOICE_INPUT_SPACE_REPLACEMENT_KEY, "remove") ?: "remove"
+        set(value) = preferences.edit {
+            it.putString(VOICE_INPUT_SPACE_REPLACEMENT_KEY, value)
+        }
+
+    var voice_input_space_custom_text: String
+        get() = preferences.getString(VOICE_INPUT_SPACE_CUSTOM_TEXT_KEY, "") ?: ""
+        set(value) = preferences.edit {
+            it.putString(VOICE_INPUT_SPACE_CUSTOM_TEXT_KEY, value)
+        }
+
+    val voice_input_settings: VoiceInputSettings
+        get() = VoiceInputSettings(
+            enabled = voice_input_space_replacement_enabled,
+            replacement = VoiceInputSpaceReplacement.fromPreference(voice_input_space_replacement),
+            customText = voice_input_space_custom_text,
+        )
+
+    const val PRESERVE_DICTIONARY_WORD_WHITESPACE_KEY =
+        "preserve_dictionary_word_whitespace_preference"
 
     internal const val GOJUON_KEYBOARD_TYPE_MIGRATION_KEY =
         "gojuon_keyboard_type_migrated_v1"
@@ -60,6 +101,8 @@ object AppPreference {
     const val SUMIRE_U_EXTENSION_MODE_KEY = "sumire_u_extension_mode_preference"
     const val CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY = "cursor_key_swipe_move_enable_preference"
     const val DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY = "delete_key_swipe_selection_enable_preference"
+    const val DATE_CANDIDATE_ORDER_KEY = "date_candidate_order"
+    const val DATE_CANDIDATE_ENABLED_FORMATS_KEY = "date_candidate_enabled_formats"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
 
     const val DEFAULT_CUSTOM_THEME_CANDIDATE_ITEM_BG_COLOR = 0x00000000
@@ -92,6 +135,9 @@ object AppPreference {
         "gemma_handwriting_pen_color_preference"
     const val FLICK_SENSITIVITY_KEY = "flick_sensitivity_preference"
     const val FLICK_THRESHOLD_SHAPE_KEY = "flick_threshold_shape_preference"
+    const val TFBI_DIAGONAL_RECOGNITION_MODE_KEY = "tfbi_diagonal_recognition_mode_preference"
+    const val SUMIRE_FLICK_ROTATION_KEY = "sumire_flick_rotation_preference"
+    const val SUMIRE_FLICK_INPUT_MODE_KEY = "sumire_flick_input_mode_preference"
     const val FLICK_TFBI_POPUP_PRESENTATION_KEY = "flick_tfbi_popup_presentation_preference"
     const val FLICK_TFBI_FLICK_START_POSITION_KEY =
         "flick_tfbi_flick_start_position_preference"
@@ -99,10 +145,18 @@ object AppPreference {
     const val TENKEY_KEYMAP_GUIDE_JAPANESE_KEY = "tenkey_keymap_guide"
     const val TENKEY_KEYMAP_GUIDE_ENGLISH_KEY = "tenkey_keymap_guide_english"
     const val TENKEY_KEYMAP_GUIDE_NUMBER_KEY = "tenkey_keymap_guide_number"
+    const val TENKEY_USE_THREE_STATE_KEY = "tenkey_use_three_state_keyboard_preference"
+    const val TENKEY_NUMBER_SYMBOL_KEY_GAP_KEY = "tenkey_number_symbol_key_gap_preference"
     const val SUMIRE_KEYMAP_GUIDE_JAPANESE_KEY = "sumire_keymap_guide_japanese"
     const val SUMIRE_KEYMAP_GUIDE_ENGLISH_KEY = "sumire_keymap_guide_english"
     const val SUMIRE_KEYMAP_GUIDE_NUMBER_KEY = "sumire_keymap_guide_number"
+    const val STABILIZE_CANDIDATE_STRIP_HEIGHT_KEY = "stabilize_candidate_strip_height_preference"
+    const val CUSTOM_DIRECT_INPUT_REPLACE_COMPOSING_KEY =
+        "custom_direct_input_replace_composing_preference"
     const val CUSTOM_KEYMAP_GUIDE_KEY = "flick_keymap_guide"
+    const val CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_KEY =
+        "custom_keyboard_input_in_empty_areas_preference"
+    const val INDEPENDENT_MULTI_TOUCH_KEY = "independent_multi_touch_preference"
     const val LONG_PRESS_TIMEOUT_KEY = "long_press_timeout_preference"
     const val DELETE_LONG_PRESS_CONVERSION_BEHAVIOR_KEY =
         "delete_long_press_conversion_behavior"
@@ -112,10 +166,27 @@ object AppPreference {
     const val KEY_SOUND_VOLUME_PERCENT_KEY = "key_sound_volume_percent_preference"
     const val ALLOW_FULLSCREEN_MODE_KEY = "allow_fullscreen_mode_preference"
     const val INLINE_SUGGESTION_ENABLED_KEY = "inline_suggestion_enabled_preference"
+    internal const val CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION_KEY =
+        "candidate_height_defaults_migration_version_preference"
     private const val MIN_CANDIDATE_VISIBLE_HEIGHT_DP = 30
     private const val MAX_CANDIDATE_VISIBLE_HEIGHT_DP = 300
+    private const val CURRENT_CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION = 1
 
-    private lateinit var preferences: SharedPreferences
+    private val initializationLock = Any()
+    @Volatile private var initialization = CompletableFuture<Unit>()
+    private val initializationStartLock = Any()
+    private val initializationStarted = AtomicBoolean(false)
+    @Volatile private var initialized = false
+    @Volatile private var initializingThread: Thread? = null
+    private lateinit var loadedPreferences: SharedPreferences
+    private val preferences: SharedPreferences
+        get() {
+            if (!initialized && Thread.currentThread() !== initializingThread) {
+                check(initializationStarted.get()) { "AppPreference has not been initialized" }
+                initialization.join()
+            }
+            return loadedPreferences
+        }
     private lateinit var appContext: Context
     private var isTabletDevice: Boolean = false
     private val gson = Gson()
@@ -134,6 +205,10 @@ object AppPreference {
     private val FLICK_THRESHOLD_SHAPE = Pair(
         FLICK_THRESHOLD_SHAPE_KEY,
         FlickThresholdShape.Radial.preferenceValue
+    )
+    private val TFBI_DIAGONAL_RECOGNITION_MODE = Pair(
+        TFBI_DIAGONAL_RECOGNITION_MODE_KEY,
+        TfbiDiagonalRecognitionMode.LEGACY.preferenceValue
     )
     private val LONG_PRESS_TIMEOUT = Pair(LONG_PRESS_TIMEOUT_KEY, 300)
     private val DELETE_LONG_PRESS_CONVERSION_BEHAVIOR =
@@ -217,7 +292,9 @@ object AppPreference {
         Pair("tenkey_kana_english_qwerty_preference", false)
 
     private val TENKEY_USE_THREE_STATE_KEYBOARD_PREFERENCE =
-        Pair("tenkey_use_three_state_keyboard_preference", true)
+        Pair(TENKEY_USE_THREE_STATE_KEY, true)
+    private val TENKEY_NUMBER_SYMBOL_KEY_GAP_PREFERENCE =
+        Pair(TENKEY_NUMBER_SYMBOL_KEY_GAP_KEY, 4)
 
     private val TENKEY_SWITCH_NUMBER_TO_QWERTY_NUMBER_PREFERENCE =
         Pair("tenkey_switch_number_to_qwerty_number_preference", false)
@@ -377,7 +454,7 @@ object AppPreference {
     private val CANDIDATE_VIEW_HEIGHT_DP_LANDSCAPE =
         Pair("candidate_view_height_dp_landscape_preference", 60)
     private val CANDIDATE_VIEW_EMPTY_HEIGHT_DP_LANDSCAPE =
-        Pair("candidate_view_empty_height_dp_landscape_preference", 110)
+        Pair("candidate_view_empty_height_dp_landscape_preference", 60)
 
     private val FLICK_INPUT_ONLY = Pair("flick_input_only_preference", false)
     private val FLICK_EDITOR_PREVIEW = Pair(FLICK_EDITOR_PREVIEW_KEY, false)
@@ -388,6 +465,13 @@ object AppPreference {
         Pair("custom_direct_mode_space_hankaku_preference", true)
     private val LIVE_CONVERSION_ENABLE = Pair("live_conversion_preference", false)
     private val LIVE_CONVERSION_START_LENGTH = Pair("live_conversion_start_length_preference", 1)
+    const val LIVE_CONVERSION_CANDIDATE_YOMI_MODE_KEY = "live_conversion_candidate_yomi_mode_preference"
+    const val CANDIDATE_YOMI_MODE_WHOLE = "whole"
+    const val CANDIDATE_YOMI_MODE_RUBY = "ruby"
+    const val LIVE_CONVERSION_CANDIDATE_YOMI_SIZE_KEY = "live_conversion_candidate_yomi_size_preference"
+    const val DEFAULT_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE = 14
+    const val MIN_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE = 1
+    const val MAX_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE = 24
     private val LIVE_CONVERSION_CANDIDATE_YOMI =
         Pair("live_conversion_candidate_yomi_preference", false)
     private const val OLD_SUMIRE_PREFERENCE_KEY = "sumire_keyboard_input_type_preference"
@@ -417,6 +501,8 @@ object AppPreference {
     private val DELETE_KEY_HIGH_LIGHT = Pair("henkan_delete_key_action_preference", true)
     private val CUSTOM_KEYBOARD_SUGGESTION_PREFERENCE =
         Pair("custom_keyboard_suggestion_preference", true)
+    private val CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_PREFERENCE =
+        Pair(CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_KEY, false)
     private val REMEMBER_LAST_CUSTOM_KEYBOARD_PREFERENCE =
         Pair("remember_last_custom_keyboard_preference", false)
     private val LAST_USED_CUSTOM_KEYBOARD_STABLE_ID =
@@ -572,33 +658,33 @@ object AppPreference {
 
     private val CANDIDATE_LETTER_SIZE = Pair("candidate_letter_size_preference", 14.0f)
 
-    private val CANDIDATE_VIEW_HEIGHT_DP = Pair("candidate_view_height_dp_preference", 110)
+    private val CANDIDATE_VIEW_HEIGHT_DP = Pair("candidate_view_height_dp_preference", 60)
     private val CANDIDATE_VIEW_EMPTY_HEIGHT_DP =
-        Pair("candidate_view_empty_height_dp_preference", 110)
+        Pair("candidate_view_empty_height_dp_preference", 60)
     private val CANDIDATE_VIEW_HEIGHT_PORTRAIT_COLUMN_1_DP =
-        Pair("candidate_view_height_portrait_column_1_dp_preference", 110)
+        Pair("candidate_view_height_portrait_column_1_dp_preference", 60)
     private val CANDIDATE_VIEW_HEIGHT_PORTRAIT_COLUMN_2_DP =
-        Pair("candidate_view_height_portrait_column_2_dp_preference", 120)
+        Pair("candidate_view_height_portrait_column_2_dp_preference", 80)
     private val CANDIDATE_VIEW_HEIGHT_PORTRAIT_COLUMN_3_DP =
-        Pair("candidate_view_height_portrait_column_3_dp_preference", 160)
+        Pair("candidate_view_height_portrait_column_3_dp_preference", 100)
     private val CANDIDATE_VIEW_HEIGHT_LANDSCAPE_COLUMN_1_DP =
         Pair("candidate_view_height_landscape_column_1_dp_preference", 60)
     private val CANDIDATE_VIEW_HEIGHT_LANDSCAPE_COLUMN_2_DP =
-        Pair("candidate_view_height_landscape_column_2_dp_preference", 90)
+        Pair("candidate_view_height_landscape_column_2_dp_preference", 80)
     private val CANDIDATE_VIEW_HEIGHT_LANDSCAPE_COLUMN_3_DP =
-        Pair("candidate_view_height_landscape_column_3_dp_preference", 120)
+        Pair("candidate_view_height_landscape_column_3_dp_preference", 100)
     private val CANDIDATE_DEFAULT_HEIGHT_PORTRAIT_COLUMN_1_DP =
-        Pair("candidate_default_height_portrait_column_1_dp_preference", 110)
+        Pair("candidate_default_height_portrait_column_1_dp_preference", 60)
     private val CANDIDATE_DEFAULT_HEIGHT_PORTRAIT_COLUMN_2_DP =
-        Pair("candidate_default_height_portrait_column_2_dp_preference", 120)
+        Pair("candidate_default_height_portrait_column_2_dp_preference", 80)
     private val CANDIDATE_DEFAULT_HEIGHT_PORTRAIT_COLUMN_3_DP =
-        Pair("candidate_default_height_portrait_column_3_dp_preference", 160)
+        Pair("candidate_default_height_portrait_column_3_dp_preference", 100)
     private val CANDIDATE_DEFAULT_HEIGHT_LANDSCAPE_COLUMN_1_DP =
         Pair("candidate_default_height_landscape_column_1_dp_preference", 60)
     private val CANDIDATE_DEFAULT_HEIGHT_LANDSCAPE_COLUMN_2_DP =
-        Pair("candidate_default_height_landscape_column_2_dp_preference", 90)
+        Pair("candidate_default_height_landscape_column_2_dp_preference", 80)
     private val CANDIDATE_DEFAULT_HEIGHT_LANDSCAPE_COLUMN_3_DP =
-        Pair("candidate_default_height_landscape_column_3_dp_preference", 120)
+        Pair("candidate_default_height_landscape_column_3_dp_preference", 100)
     private val CANDIDATE_DEFAULT_EMPTY_HEIGHT_DP =
         Pair(
             "candidate_default_empty_height_dp_preference",
@@ -916,15 +1002,64 @@ object AppPreference {
     private val TYPO_CORRECTION_JA_FLICK_OFFSET_SCORE_PREFERENCE =
         Pair("enable_typo_correction_japanese_flick_keyboard_offset_score_preference", 3000)
 
+    fun startInitialization(context: Context) {
+        synchronized(initializationStartLock) {
+            if (initialization.isCompletedExceptionally) {
+                initialization = CompletableFuture()
+                initializationStarted.set(false)
+            }
+            if (!initializationStarted.compareAndSet(false, true)) return
+            Thread({
+                try {
+                    init(context)
+                } catch (_: Throwable) {
+                    // init completed its future exceptionally; the loading UI owns retry.
+                }
+            }, "AppPreferenceInit").start()
+        }
+    }
+
+    suspend fun awaitInitializationSuspending() = kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
+        // A cancelled screen must not remain retained by a slow initialization future.
+        val waiting = java.util.concurrent.atomic.AtomicReference(continuation)
+        continuation.invokeOnCancellation { waiting.set(null) }
+        initialization.whenComplete { _, error ->
+            waiting.getAndSet(null)?.resumeWith(
+                if (error == null) Result.success(Unit) else Result.failure(error),
+            )
+        }
+    }
+
+    fun awaitInitialization() {
+        initialization.join()
+    }
+
     fun init(context: Context) {
-        appContext = context.applicationContext
-        isTabletDevice = context.resources.getBoolean(CoreR.bool.isTablet)
-        preferences = PreferenceManager.getDefaultSharedPreferences(context)
-        removeUnsafeLegacyGemmaHandwritingPrompt()
-        migratePredictionLookaheadPreferenceIfNeeded()
-        migrateSymbolEmojiCandidatePreferenceIfNeeded()
-        migrateSumireKeymapGuideModesIfNeeded()
-        migrateGojuonKeyboardTypeIfNeeded(context)
+        synchronized(initializationLock) {
+            initializationStarted.set(true)
+            initializingThread = Thread.currentThread()
+            try {
+                appContext = context.applicationContext
+                // This startup filesystem maintenance used to run in Application.onCreate on main.
+                appContext.codeCacheDir.setReadOnly()
+                isTabletDevice = context.resources.getBoolean(CoreR.bool.isTablet)
+                loadedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+                migrateCandidateHeightDefaultsIfNeeded()
+                removeUnsafeLegacyGemmaHandwritingPrompt()
+                migratePredictionLookaheadPreferenceIfNeeded()
+                migrateSymbolEmojiCandidatePreferenceIfNeeded()
+                migrateSumireKeymapGuideModesIfNeeded()
+                migrateGojuonKeyboardTypeIfNeeded(context)
+                migrateSumirePreferenceIfNeeded()
+                initialized = true
+                initialization.complete(Unit)
+            } catch (failure: Throwable) {
+                initialization.completeExceptionally(failure)
+                throw failure
+            } finally {
+                initializingThread = null
+            }
+        }
     }
 
     fun migrateGojuonKeyboardTypeIfNeeded(context: Context = appContext) {
@@ -1191,6 +1326,15 @@ object AppPreference {
         )
         set(value) = preferences.edit {
             it.putBoolean(TENKEY_USE_THREE_STATE_KEYBOARD_PREFERENCE.first, value)
+        }
+
+    var tenkey_number_symbol_key_gap_preference: Int
+        get() = preferences.getInt(
+            TENKEY_NUMBER_SYMBOL_KEY_GAP_PREFERENCE.first,
+            TENKEY_NUMBER_SYMBOL_KEY_GAP_PREFERENCE.second,
+        ).coerceIn(0, 16)
+        set(value) = preferences.edit {
+            it.putInt(TENKEY_NUMBER_SYMBOL_KEY_GAP_PREFERENCE.first, value.coerceIn(0, 16))
         }
 
     var tenkey_switch_number_to_qwerty_number_preference: Boolean
@@ -1547,7 +1691,6 @@ object AppPreference {
             it.putBoolean(QWERTY_ENABLE_FLICK_DOWN_WINDOW.first, value ?: false)
         }
 
-
     var qwerty_enable_zenkaku_space_preference: Boolean?
         get() = preferences.getBoolean(
             QWERTY_ZENKAKU_SPACE_PREFERENCE.first, QWERTY_ZENKAKU_SPACE_PREFERENCE.second
@@ -1795,6 +1938,33 @@ object AppPreference {
             )
         }
 
+    var tfbi_diagonal_recognition_mode_preference: TfbiDiagonalRecognitionMode
+        get() = TfbiDiagonalRecognitionMode.fromPreferenceValue(
+            preferences.getString(
+                TFBI_DIAGONAL_RECOGNITION_MODE.first,
+                TFBI_DIAGONAL_RECOGNITION_MODE.second
+            )
+        )
+        set(value) = preferences.edit {
+            it.putString(TFBI_DIAGONAL_RECOGNITION_MODE.first, value.preferenceValue)
+        }
+
+    var sumire_flick_rotation_preference: TfbiFlickRotation
+        get() = TfbiFlickRotation.fromPreferenceValue(
+            preferences.getString(SUMIRE_FLICK_ROTATION_KEY, TfbiFlickRotation.DEFAULT.preferenceValue)
+        )
+        set(value) = preferences.edit {
+            it.putString(SUMIRE_FLICK_ROTATION_KEY, value.preferenceValue)
+        }
+
+    var sumire_flick_input_mode_preference: SumireFlickInputMode
+        get() = SumireFlickInputMode.fromPreferenceValue(
+            preferences.getString(SUMIRE_FLICK_INPUT_MODE_KEY, SumireFlickInputMode.ALL.preferenceValue)
+        )
+        set(value) = preferences.edit {
+            it.putString(SUMIRE_FLICK_INPUT_MODE_KEY, value.preferenceValue)
+        }
+
     var hierarchical_flick_mode_switch_angle_margin_preference: Int
         get() = preferences.getInt(
             HIERARCHICAL_FLICK_MODE_SWITCH_ANGLE_MARGIN.first,
@@ -1846,6 +2016,10 @@ object AppPreference {
             it.putBoolean(DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE.first, value)
         }
 
+    var independent_multi_touch_preference: Boolean
+        get() = preferences.getBoolean(INDEPENDENT_MULTI_TOUCH_KEY, false)
+        set(value) = preferences.edit { it.putBoolean(INDEPENDENT_MULTI_TOUCH_KEY, value) }
+
     var long_press_timeout_preference: Int?
         get() = preferences.getInt(
             LONG_PRESS_TIMEOUT.first, LONG_PRESS_TIMEOUT.second
@@ -1887,6 +2061,28 @@ object AppPreference {
         )
         set(value) = preferences.edit {
             it.putBoolean(INCREMENTAL_CONVERSION_SESSION_PREFERENCE.first, value)
+        }
+
+    var date_candidate_config: DateCandidateConfig
+        get() {
+            val formatsByValue = DateCandidateFormat.entries.associateBy { it.preferenceValue }
+            val order = preferences.getString(DATE_CANDIDATE_ORDER_KEY, null)
+                ?.split(',')?.mapNotNull(formatsByValue::get).orEmpty()
+            val enabledValues = preferences.getStringSet(DATE_CANDIDATE_ENABLED_FORMATS_KEY, null)
+            val enabledFormats = enabledValues?.mapNotNull(formatsByValue::get)?.toSet()
+                ?: DateCandidateFormat.entries.toSet()
+            val config = DateCandidateConfig(order = order, enabledFormats = enabledFormats)
+            return config.copy(order = config.normalizedOrder)
+        }
+        set(value) = preferences.edit { editor ->
+            editor.putString(
+                DATE_CANDIDATE_ORDER_KEY,
+                value.normalizedOrder.joinToString(",") { it.preferenceValue },
+            )
+            editor.putStringSet(
+                DATE_CANDIDATE_ENABLED_FORMATS_KEY,
+                value.enabledFormats.mapTo(mutableSetOf()) { it.preferenceValue },
+            )
         }
 
     var utility_candidate_config: UtilityCandidateConfig
@@ -2276,6 +2472,12 @@ object AppPreference {
             it.putBoolean(CUSTOM_NGRAM_DICTIONARY_ENABLE_PREFERENCE.first, value)
         }
 
+    var preserve_dictionary_word_whitespace_preference: Boolean
+        get() = preferences.getBoolean(PRESERVE_DICTIONARY_WORD_WHITESPACE_KEY, false)
+        set(value) = preferences.edit {
+            it.putBoolean(PRESERVE_DICTIONARY_WORD_WHITESPACE_KEY, value)
+        }
+
     var show_dictionary_candidate_labels_preference: Boolean
         get() = preferences.getBoolean(
             SHOW_DICTIONARY_CANDIDATE_LABELS_PREFERENCE.first,
@@ -2510,6 +2712,14 @@ object AppPreference {
             it.putBoolean(FLICK_EDITOR_PREVIEW.first, value)
         }
 
+    var flick_editor_preview_delay_ms: Int
+        get() = FlickPreviewDelaySettings.normalize(
+            preferences.getInt(FlickPreviewDelaySettings.KEY, 0)
+        )
+        set(value) = preferences.edit {
+            it.putInt(FlickPreviewDelaySettings.KEY, FlickPreviewDelaySettings.normalize(value))
+        }
+
     var undo_enable_preference: Boolean?
         get() = preferences.getBoolean(UNDO_ENABLE.first, UNDO_ENABLE.second)
         set(value) = preferences.edit {
@@ -2588,6 +2798,24 @@ object AppPreference {
             )
         }
 
+    var live_conversion_candidate_yomi_mode: String
+        get() = preferences.getString(
+            LIVE_CONVERSION_CANDIDATE_YOMI_MODE_KEY, CANDIDATE_YOMI_MODE_WHOLE
+        ).let { if (it == CANDIDATE_YOMI_MODE_RUBY) it else CANDIDATE_YOMI_MODE_WHOLE }
+        set(value) = preferences.edit {
+            it.putString(LIVE_CONVERSION_CANDIDATE_YOMI_MODE_KEY,
+                if (value == CANDIDATE_YOMI_MODE_RUBY) value else CANDIDATE_YOMI_MODE_WHOLE)
+        }
+
+    var live_conversion_candidate_yomi_size: Int
+        get() = preferences.getInt(
+            LIVE_CONVERSION_CANDIDATE_YOMI_SIZE_KEY, DEFAULT_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE
+        ).coerceIn(MIN_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE, MAX_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE)
+        set(value) = preferences.edit {
+            it.putInt(LIVE_CONVERSION_CANDIDATE_YOMI_SIZE_KEY,
+                value.coerceIn(MIN_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE, MAX_LIVE_CONVERSION_CANDIDATE_YOMI_SIZE))
+        }
+
     var delete_key_high_light_preference: Boolean?
         get() = preferences.getBoolean(DELETE_KEY_HIGH_LIGHT.first, DELETE_KEY_HIGH_LIGHT.second)
         set(value) = preferences.edit {
@@ -2601,6 +2829,21 @@ object AppPreference {
         )
         set(value) = preferences.edit {
             it.putBoolean(CUSTOM_KEYBOARD_SUGGESTION_PREFERENCE.first, value ?: true)
+        }
+
+    var custom_direct_input_replace_composing_preference: Boolean
+        get() = preferences.getBoolean(CUSTOM_DIRECT_INPUT_REPLACE_COMPOSING_KEY, false)
+        set(value) = preferences.edit {
+            it.putBoolean(CUSTOM_DIRECT_INPUT_REPLACE_COMPOSING_KEY, value)
+        }
+
+    var custom_keyboard_input_in_empty_areas_preference: Boolean
+        get() = preferences.getBoolean(
+            CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_PREFERENCE.first,
+            CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_PREFERENCE.second
+        )
+        set(value) = preferences.edit {
+            it.putBoolean(CUSTOM_KEYBOARD_INPUT_IN_EMPTY_AREAS_PREFERENCE.first, value)
         }
 
     var remember_last_custom_keyboard_preference: Boolean?
@@ -2736,6 +2979,53 @@ object AppPreference {
             it.putString(CANDIDATE_COLUMN_LANDSCAPE_PREFERENCE.first, value)
         }
 
+    internal fun migrateCandidateHeightDefaultsIfNeeded() {
+        if (preferences.getInt(
+                CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION_KEY,
+                0
+            ) >= CURRENT_CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION
+        ) {
+            return
+        }
+
+        preferences.edit { editor ->
+            listOf(false, true).forEach { isLandscape ->
+                listOf("1", "2", "3").forEach { column ->
+                    val heightPreference = candidateHeightPreferenceFor(isLandscape, column)
+                    editor.putInt(heightPreference.first, heightPreference.second)
+
+                    val defaultPreference = candidateDefaultHeightPreferenceFor(isLandscape, column)
+                    editor.putInt(defaultPreference.first, defaultPreference.second)
+                }
+
+                val activeColumn = getCandidateColumn(isLandscape)
+                val activeHeight = candidateHeightPreferenceFor(isLandscape, activeColumn).second
+                editor.putInt(
+                    if (isLandscape) {
+                        CANDIDATE_VIEW_HEIGHT_DP_LANDSCAPE.first
+                    } else {
+                        CANDIDATE_VIEW_HEIGHT_DP.first
+                    },
+                    activeHeight
+                )
+
+                val emptyPreference = candidateEmptyHeightPreferenceFor(isLandscape)
+                editor.putInt(emptyPreference.first, emptyPreference.second)
+
+                val defaultEmptyPreference = candidateDefaultEmptyHeightPreferenceFor(isLandscape)
+                editor.putInt(defaultEmptyPreference.first, defaultEmptyPreference.second)
+            }
+
+            // The per-column values have been initialized above, so the older lazy migration
+            // must not copy the active value over them later.
+            editor.putBoolean(CANDIDATE_HEIGHT_PER_COLUMN_MIGRATED.first, true)
+            editor.putInt(
+                CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION_KEY,
+                CURRENT_CANDIDATE_HEIGHT_DEFAULTS_MIGRATION_VERSION
+            )
+        }
+    }
+
     fun migrateCandidateHeightPerColumnPreferencesIfNeeded() {
         if (preferences.getBoolean(
                 CANDIDATE_HEIGHT_PER_COLUMN_MIGRATED.first,
@@ -2747,10 +3037,8 @@ object AppPreference {
 
         val portraitColumn = normalizeCandidateColumn(candidate_column_preference)
         val landscapeColumn = normalizeCandidateColumn(candidate_column_landscape_preference)
-        val portraitHeight = (candidate_view_height_dp
-            ?: CANDIDATE_VIEW_HEIGHT_DP.second).coerceIn(MIN_CANDIDATE_VISIBLE_HEIGHT_DP, MAX_CANDIDATE_VISIBLE_HEIGHT_DP)
-        val landscapeHeight = (candidate_view_height_dp_landscape
-            ?: CANDIDATE_VIEW_HEIGHT_DP_LANDSCAPE.second).coerceIn(MIN_CANDIDATE_VISIBLE_HEIGHT_DP, MAX_CANDIDATE_VISIBLE_HEIGHT_DP)
+        val portraitHeight = candidateHeightForPerColumnMigration(false, portraitColumn)
+        val landscapeHeight = candidateHeightForPerColumnMigration(true, landscapeColumn)
 
         preferences.edit { editor ->
             candidateHeightPreferenceFor(isLandscape = false, column = "1").let { editor.putInt(it.first, it.second) }
@@ -2761,8 +3049,27 @@ object AppPreference {
             candidateHeightPreferenceFor(isLandscape = true, column = "3").let { editor.putInt(it.first, it.second) }
             editor.putInt(candidateHeightPreferenceFor(false, portraitColumn).first, portraitHeight)
             editor.putInt(candidateHeightPreferenceFor(true, landscapeColumn).first, landscapeHeight)
+            editor.putInt(CANDIDATE_VIEW_HEIGHT_DP.first, portraitHeight)
+            editor.putInt(CANDIDATE_VIEW_HEIGHT_DP_LANDSCAPE.first, landscapeHeight)
             editor.putBoolean(CANDIDATE_HEIGHT_PER_COLUMN_MIGRATED.first, true)
         }
+    }
+
+    private fun candidateHeightForPerColumnMigration(
+        isLandscape: Boolean,
+        column: String
+    ): Int {
+        val activePreference = if (isLandscape) {
+            CANDIDATE_VIEW_HEIGHT_DP_LANDSCAPE
+        } else {
+            CANDIDATE_VIEW_HEIGHT_DP
+        }
+        val heightDp = if (preferences.contains(activePreference.first)) {
+            readIntPreference(activePreference.first, activePreference.second)
+        } else {
+            candidateHeightPreferenceFor(isLandscape, column).second
+        }
+        return heightDp.coerceIn(MIN_CANDIDATE_VISIBLE_HEIGHT_DP, MAX_CANDIDATE_VISIBLE_HEIGHT_DP)
     }
 
     fun getCandidateVisibleHeightDp(
@@ -2982,6 +3289,12 @@ object AppPreference {
         )
         set(value) = preferences.edit {
             it.putBoolean(SHORTCUT_TOOLBAR_INTEGRATED_IN_SUGGESTION_PREFERENCE.first, value)
+        }
+
+    var stabilize_candidate_strip_height_preference: Boolean
+        get() = preferences.getBoolean(STABILIZE_CANDIDATE_STRIP_HEIGHT_KEY, false)
+        set(value) = preferences.edit {
+            it.putBoolean(STABILIZE_CANDIDATE_STRIP_HEIGHT_KEY, value)
         }
 
     var shortcut_toolbar_height_dp_preference: Int
@@ -3235,6 +3548,30 @@ object AppPreference {
             )
         }
 
+    var gojuon_key_width_scale_percent: Int
+        get() = preferences.getInt("gojuon_key_width_scale_percent", 100).coerceIn(60, 140)
+        set(value) = preferences.edit { it.putInt("gojuon_key_width_scale_percent", value.coerceIn(60, 140)) }
+
+    var gojuon_key_height_scale_percent: Int
+        get() = preferences.getInt("gojuon_key_height_scale_percent", 100).coerceIn(60, 140)
+        set(value) = preferences.edit { it.putInt("gojuon_key_height_scale_percent", value.coerceIn(60, 140)) }
+
+    var gojuon_special_key_width_scale_percent: Int
+        get() = preferences.getInt("gojuon_special_key_width_scale_percent", 100).coerceIn(60, 140)
+        set(value) = preferences.edit { it.putInt("gojuon_special_key_width_scale_percent", value.coerceIn(60, 140)) }
+
+    var gojuon_special_key_height_scale_percent: Int
+        get() = preferences.getInt("gojuon_special_key_height_scale_percent", 100).coerceIn(60, 140)
+        set(value) = preferences.edit { it.putInt("gojuon_special_key_height_scale_percent", value.coerceIn(60, 140)) }
+
+    var gojuon_special_icon_scale_percent: Int
+        get() = preferences.getInt("gojuon_special_icon_scale_percent", 100).coerceIn(40, 200)
+        set(value) = preferences.edit { it.putInt("gojuon_special_icon_scale_percent", value.coerceIn(40, 200)) }
+
+    var gojuon_special_text_size_sp: Float
+        get() = preferences.getFloat("gojuon_special_text_size_sp", 18f).takeIf { it.isFinite() }?.coerceIn(8f, 32f) ?: 18f
+        set(value) = preferences.edit { it.putFloat("gojuon_special_text_size_sp", value.takeIf { it.isFinite() }?.coerceIn(8f, 32f) ?: 18f) }
+
     var flick_key_width_scale_percent: Int?
         get() = preferences.getInt(
             FLICK_KEY_WIDTH_SCALE_PERCENT.first,
@@ -3270,6 +3607,39 @@ object AppPreference {
                 value ?: FLICK_KEY_ICON_SCALE_PERCENT.second
             )
         }
+
+    /** Null means inherit the existing shared setting; opening a screen must not create overrides. */
+    fun modeKeySize(surface: String, mode: KeyboardInputMode, guide: Boolean): Float? {
+        val key = modeKeySizeKey(surface, mode, guide)
+        return if (preferences.contains(key)) preferences.getFloat(key, 0f).takeIf { it.isFinite() }
+        else null
+    }
+
+    fun setModeKeySize(surface: String, mode: KeyboardInputMode, guide: Boolean, size: Float?) {
+        preferences.edit {
+            val key = modeKeySizeKey(surface, mode, guide)
+            if (size == null) it.remove(key)
+            else {
+                require(size.isFinite())
+                val range = if (guide) 6f..16f else if (surface == "tenkey") 4f..40f else 8f..32f
+                it.putFloat(key, size.coerceIn(range))
+            }
+        }
+    }
+
+    fun resetModeKeySizes(surface: String, mode: KeyboardInputMode? = null) {
+        preferences.edit { editor ->
+            (mode?.let { listOf(it) } ?: KeyboardInputMode.entries).forEach { inputMode ->
+                editor.remove(modeKeySizeKey(surface, inputMode, false))
+                editor.remove(modeKeySizeKey(surface, inputMode, true))
+            }
+        }
+    }
+
+    private fun modeKeySizeKey(surface: String, mode: KeyboardInputMode, guide: Boolean): String {
+        require(surface == "tenkey" || surface == "sumire" || surface == "gojuon")
+        return "${surface}_${mode.name.lowercase(java.util.Locale.ROOT)}_${if (guide) "guide" else "key"}_text_size_sp"
+    }
 
     var flick_key_text_size_sp: Float?
         get() = preferences.getFloat(
@@ -3885,7 +4255,6 @@ object AppPreference {
         )
         set(value) = preferences.edit { it.putInt(CUSTOM_THEME_POST_EDIT_TEXT.first, value) }
 
-
     var sumire_english_qwerty_preference: Boolean
         get() = preferences.getBoolean(
             SUMIRE_ENGLISH_QWERTY_PREFERENCE.first,
@@ -3957,7 +4326,6 @@ object AppPreference {
         set(value) = preferences.edit {
             it.putBoolean(CONVERSION_CANDIDATES_ROMAJI_ENABLE_PREFERENCE.first, value)
         }
-
 
     var learn_first_candidate_dictionary_preference: Boolean
         get() = preferences.getBoolean(
@@ -4114,7 +4482,6 @@ object AppPreference {
                 value
             )
         }
-
 
     var keyboard_margin_start_dp: Int?
         get() = preferences.getInt(KEYBOARD_MARGIN_START_DP.first, KEYBOARD_MARGIN_START_DP.second)
@@ -4883,7 +5250,7 @@ object AppPreference {
     /**
      * SharedPreferences 全体を JSON として書き出す（将来キーが増えても自動対応）
      */
-    fun exportAllToJson(): String {
+    fun exportAllToJson(shortcutIds: List<String>? = null): String {
         val all = preferences.all // Map<String, *>
         val entries = all.entries.map { (k, v) ->
             when (v) {
@@ -4905,14 +5272,21 @@ object AppPreference {
             }
         }
 
-        return gson.toJson(PrefBackup(entries = entries))
+        return gson.toJson(
+            PrefBackup(
+                version = if (shortcutIds == null) 1 else 2,
+                entries = entries,
+                shortcutIds = shortcutIds
+            )
+        )
     }
 
     /**
      * JSON を読み込んで SharedPreferences に反映
      * @param replaceAll true の場合は一旦 clear() してから復元（バックアップ復元向け）
+     * @return バックアップ内のツールバーのID一覧（旧形式では null）。DBへの反映は呼び出し元で行う。
      */
-    fun importAllFromJson(json: String, replaceAll: Boolean = true) {
+    fun importAllFromJson(json: String, replaceAll: Boolean = true): List<String>? {
         val backup = try {
             gson.fromJson(json, PrefBackup::class.java)
         } catch (e: Exception) {
@@ -4943,6 +5317,7 @@ object AppPreference {
         }
         migrateSumireKeymapGuideModesIfNeeded()
         migrateGojuonKeyboardTypeIfNeeded()
+        return backup.shortcutIds
     }
 
     fun migrateSumirePreferenceIfNeeded() {

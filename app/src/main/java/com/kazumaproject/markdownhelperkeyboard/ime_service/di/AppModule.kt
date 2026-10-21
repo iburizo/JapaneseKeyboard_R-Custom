@@ -268,17 +268,16 @@ object AppModule {
     @Singleton
     @Provides
     fun providesPreference(@ApplicationContext context: Context): AppPreference {
-        return AppPreference.apply {
-            init(context)
-            migrateSumirePreferenceIfNeeded()
+        return AppPreference.also { preference ->
+            preference.startInitialization(context)
             com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.uExtensionModeProvider = {
-                sumire_u_extension_mode_preference
+                preference.sumire_u_extension_mode_preference
             }
             com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorKeySwipeMoveEnableProvider = {
-                cursor_key_swipe_move_enable_preference
+                preference.cursor_key_swipe_move_enable_preference
             }
             com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.deleteKeySwipeSelectionEnableProvider = {
-                delete_key_swipe_selection_enable_preference
+                preference.delete_key_swipe_selection_enable_preference
             }
             com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteGlobalBinder.bind(
                 inputConnectionProvider = { null },

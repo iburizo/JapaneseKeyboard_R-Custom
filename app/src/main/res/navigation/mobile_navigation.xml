@@ -129,6 +129,11 @@
         android:label="@string/category_common" />
 
     <fragment
+        android:id="@+id/localFontSettingsFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.local_font.LocalFontSettingsFragment"
+        android:label="@string/local_font_title" />
+
+    <fragment
         android:id="@+id/legacyCommonPreferenceFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.LegacyCommonPreferenceFragment"
         android:label="@string/category_common" />
@@ -142,6 +147,11 @@
         android:id="@+id/inputMethodPreferenceFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.InputMethodPreferenceFragment"
         android:label="@string/setting_category_input_method_title" />
+
+    <fragment
+        android:id="@+id/voiceInputPreferenceFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.VoiceInputPreferenceFragment"
+        android:label="@string/setting_category_voice_input_title" />
 
     <fragment
         android:id="@+id/candidateConversionPreferenceFragment"
@@ -162,6 +172,11 @@
         android:id="@+id/unitTargetSettingsFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.UnitTargetSettingsFragment"
         android:label="@string/utility_conversion_targets_title" />
+
+    <fragment
+        android:id="@+id/dateCandidateSettingsFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.DateCandidateSettingsFragment"
+        android:label="@string/date_candidate_settings_title" />
 
     <fragment
         android:id="@+id/aiConversionPreferenceFragment"
@@ -313,9 +328,6 @@
         android:name="com.kazumaproject.markdownhelperkeyboard.custom_keyboard.ui.KeyboardListFragment"
         android:label="@string/custom_layout_fragment_title">
         <action
-            android:id="@+id/action_select_keyboard_layouts"
-            app:destination="@id/keyboardSelectionFragment" />
-        <action
             android:id="@+id/action_keyboardListFragment_to_keyboardEditorFragment"
             app:destination="@id/keyboardEditorFragment" />
     </fragment>
@@ -372,6 +384,16 @@
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.candidate_view_height_setting.CandidateViewHeightSettingFragment"
         android:label="@string/candidate_view_height_setting_fragment_title"
         tools:layout="@layout/fragment_candidate_view_height_setting" />
+    <fragment
+        android:id="@+id/candidateHeightDefaultsFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.candidate_view_height_setting.CandidateHeightDefaultsFragment"
+        android:label="@string/candidate_default_height_title"
+        tools:layout="@layout/fragment_candidate_height_defaults">
+        <argument
+            android:name="isLandscape"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
     <fragment
         android:id="@+id/keyboardSizeLandscapeFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.keyboard_size_landscape_setting.KeyboardSizeLandscapeFragment"
@@ -458,6 +480,15 @@
         android:id="@+id/keyboardSkinSelectionFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.keyboard_theme.KeyboardSkinSelectionFragment"
         android:label="@string/keyboard_skin_choose" />
+    <fragment
+        android:id="@+id/gojuonPreferenceFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.GojuonPreferenceFragment"
+        android:label="@string/gojuon_settings_category" />
+    <fragment
+        android:id="@+id/gojuonSizeSettingsFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.gojuon_size_setting.GojuonSizeSettingsFragment"
+        android:label="@string/gojuon_keyboard_size_title"
+        tools:layout="@layout/fragment_gojuon_size_settings" />
     <fragment
         android:id="@+id/tenKeyCandidateLetterSizeFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.tenkey_letter_size_setting.TenKeyCandidateLetterSizeFragment"
@@ -578,4 +609,9 @@
     <fragment android:id="@+id/splitKeyboardPreferenceFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.SplitKeyboardPreferenceFragment"
         android:label="@string/split_keyboard_title" />
+    <fragment
+        android:id="@+id/dictionaryBrowserFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.dictionary_browser.DictionaryBrowserFragment"
+        android:label="@string/dictionary_browser_title"
+        tools:layout="@layout/fragment_dictionary_browser" />
 </navigation>

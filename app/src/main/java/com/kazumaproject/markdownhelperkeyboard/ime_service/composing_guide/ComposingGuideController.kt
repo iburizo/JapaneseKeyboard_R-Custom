@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
 import androidx.preference.PreferenceManager
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
 
 /** Coordinates mutually exclusive hosts of the single candidate surface. */
 internal class ComposingGuideController(
@@ -28,7 +29,7 @@ internal class ComposingGuideController(
     }
 
     init {
-        GuideProfile.entries.forEach { profile ->
+        GuideProfile.entries.filter { it != GuideProfile.ZENZ }.forEach { profile ->
             windows[profile] = ComposingGuideWindow(context, eligible,
                 onSurfaceChanged, colors, minimumCandidateHeight, profile,
                 candidateBounds = { windows[GuideProfile.CANDIDATES]?.currentBounds() },
@@ -38,6 +39,13 @@ internal class ComposingGuideController(
     }
 
     private fun allowedProfiles(): List<GuideProfile> = settings.profiles
+
+    fun currentCandidateBounds(): GuideBounds? = activeProfiles.firstOrNull { it.hasCandidates }
+        ?.let { windows.getValue(it).currentBounds() }
+
+    fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        windows.values.forEach { it.setKeyboardFont(snapshot) }
+    }
 
     fun start(view: View) { stop(); anchor = view; refresh() }
 
@@ -84,8 +92,9 @@ internal class ComposingGuideController(
 }
 
 /** Try above, below, left and right before using a clamped offset. */
-internal fun placeTextGuide(reference: GuideBounds, area: GuideBounds, height: Int, gap: Int): GuideBounds {
-    val width = reference.width.coerceAtMost(area.width)
+internal fun placeTextGuide(reference: GuideBounds, area: GuideBounds, height: Int, gap: Int,
+    requestedWidth: Int = reference.width): GuideBounds {
+    val width = requestedWidth.coerceAtMost(area.width)
     val safeHeight = height.coerceAtMost(area.height)
     val choices = listOf(
         GuideBounds(reference.x, reference.y - safeHeight - gap, width, safeHeight),

@@ -10,7 +10,10 @@ import android.widget.LinearLayout
 import androidx.core.view.isVisible
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import com.kazumaproject.core.ui.font.KeyboardFontApplicator
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
 import com.kazumaproject.markdownhelperkeyboard.R
+import com.kazumaproject.markdownhelperkeyboard.ime_service.adapters.SuggestionAdapter
 import com.kazumaproject.markdownhelperkeyboard.ime_service.composing_guide.*
 import kotlin.math.roundToInt
 
@@ -33,6 +36,7 @@ internal class SplitKeyboardController(
     }
     private val density get() = context.resources.displayMetrics.density
     private val panes = linkedMapOf<SplitSlot, Pane>()
+    private var keyboardFontSnapshot = KeyboardFontApplicator.processSnapshot
     var editing = false
         private set
     private var landscape = isLandscape()
@@ -45,6 +49,19 @@ internal class SplitKeyboardController(
         if (candidatesDetached == detached) return
         candidatesDetached = detached
         refresh()
+    }
+
+    fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        keyboardFontSnapshot = snapshot
+        panes.values.forEach { pane ->
+            pane.root.setKeyboardFont(snapshot)
+            (pane.candidates.adapter as? SuggestionAdapter)?.setKeyboardFont(snapshot)
+            // Pane contents are candidate RecyclerView followed by keyboard content. Candidate
+            // adapters own their normal labels and keep icon-only glyphs out of this pass.
+            pane.contents.getChildAt(1)?.let {
+                KeyboardFontApplicator.applyToKeyboardViews(it, snapshot)
+            }
+        }
     }
     private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { refresh() }
     private var disposed = false
@@ -86,6 +103,7 @@ internal class SplitKeyboardController(
         val minWidth = 120
         val minHeight = 80
         val root = FloatingPanelFrame(context, { setEditing(!editing) }, { gesture(this, it) }).apply {
+            applicationWindowView = anchor
             contentDescription = context.getString(if (slot == SplitSlot.MAIN) R.string.split_keyboard_main else R.string.split_keyboard_sub)
         }
         val input = InputFrame(slot)
@@ -115,6 +133,7 @@ internal class SplitKeyboardController(
         pane.contents.addView(candidates, LinearLayout.LayoutParams(-1, dp(58)))
         val scaledBody = SplitKeyboardBody(context, dp(minimumWidthDp), dp(minimumHeightDp))
         scaledBody.addView(body)
+        KeyboardFontApplicator.applyToKeyboardViews(scaledBody, keyboardFontSnapshot)
         pane.contents.addView(scaledBody, LinearLayout.LayoutParams(-1, 0, 1f))
         panes[slot] = pane
     }
@@ -195,7 +214,12 @@ internal class SplitKeyboardController(
         coordinates.position(params, x, y)
         params.width = width; params.height = height
         try {
-            if (pane.root.parent == null) manager.addView(pane.root, params) else manager.updateViewLayout(pane.root, params)
+            if (pane.root.parent == null) {
+                manager.addView(pane.root, params)
+            } else {
+                manager.updateViewLayout(pane.root, params)
+                pane.root.notifyWindowPositionChanged()
+            }
             pane.params = params
         } catch (_: WindowManager.BadTokenException) {
             stop(); onWindowFailure()
@@ -253,6 +277,7 @@ internal class SplitKeyboardController(
         panes.values.forEach { pane ->
             pane.gesture = null
             pane.gestureStart = null
+            pane.root.applicationWindowView = null
             if (pane.root.parent != null) manager.removeViewImmediate(pane.root)
             pane.candidates.adapter = null
         }

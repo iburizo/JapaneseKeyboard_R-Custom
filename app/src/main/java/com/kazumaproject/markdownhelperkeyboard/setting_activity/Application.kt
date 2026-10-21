@@ -4,16 +4,16 @@ import android.app.Application
 import com.kazumaproject.markdownhelperkeyboard.BuildConfig
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
-import java.io.File
 
 @HiltAndroidApp
 class Application : Application() {
     override fun onCreate() {
         super.onCreate()
+        // Opening preferences (including directory lookup) happens on AppPreferenceInit.
+        AppPreference.startInitialization(this)
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
-        val dexOutputDir: File = codeCacheDir
-        dexOutputDir.setReadOnly()
     }
+
 }

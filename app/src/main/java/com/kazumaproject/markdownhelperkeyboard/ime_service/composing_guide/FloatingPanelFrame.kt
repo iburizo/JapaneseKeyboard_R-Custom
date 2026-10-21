@@ -8,13 +8,19 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.graphics.ColorUtils
+import com.kazumaproject.core.ui.skin.SkinPopupWindowHost
+import com.kazumaproject.core.ui.font.KeyboardFontAware
+import com.kazumaproject.core.ui.font.KeyboardFontApplicator
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
 import com.kazumaproject.markdownhelperkeyboard.R
 import kotlin.math.roundToInt
 
@@ -22,8 +28,12 @@ import kotlin.math.roundToInt
 internal open class FloatingPanelFrame(
     context: Context,
     onEdit: () -> Unit,
-    private val onHandleEvent: (MotionEvent) -> Unit,
-) : FrameLayout(context) {
+    private val onHandleEvent: (MotionEvent) -> Unit = {},
+    title: CharSequence? = null,
+    onHide: (() -> Unit)? = null,
+) : FrameLayout(context), SkinPopupWindowHost, KeyboardFontAware {
+    override var applicationWindowView: View? = null
+
     protected fun dp(value: Int) = (value * resources.displayMetrics.density).roundToInt()
     protected var colors = CandidatePanelColors.resolve(context)
         private set
@@ -38,22 +48,35 @@ internal open class FloatingPanelFrame(
         isFocusable = false
         setOnClickListener { onEdit() }
     }
+    private val panelTitle = title?.let { value -> TextView(context).apply {
+        text = value
+        textSize = 15f
+        setSingleLine(true)
+        ellipsize = TextUtils.TruncateAt.END
+        gravity = Gravity.CENTER_VERTICAL
+    } }
+    private val hideButton = onHide?.let { action ->
+        icon(com.kazumaproject.core.R.drawable.ic_close, R.string.floating_dictionary_hide, action)
+    }
     private val edges = listOf(GuideHandle.LEFT, GuideHandle.TOP, GuideHandle.RIGHT, GuideHandle.BOTTOM)
         .associateWith { HandleView(context, it) }
     private var handlingGesture = false
     private var headerVisible = true
     private var footerEnabled = false
+    private var moveBandDp = MOVE_BAND_DP
     var editing = false
         private set
 
     val contentInsets: Rect get() = Rect(dp(if (editing) 24 else 8), dp(if (headerVisible) (if (editing) 72 else 56) else (if (editing) 24 else 8)),
-        dp(if (editing) 24 else 8), dp(MOVE_BAND_DP + if (editing) (if (footerEnabled) 104 else 32) else 4))
+        dp(if (editing) 24 else 8), dp(moveBandDp + if (editing) (if (footerEnabled) 104 else 32) else 4))
 
     init {
         isClickable = true
         elevation = dp(8).toFloat()
         addView(contentContainer)
+        panelTitle?.let { header.addView(it, LinearLayout.LayoutParams(0, dp(48), 1f)) }
         header.addView(editButton, LinearLayout.LayoutParams(dp(48), dp(48)))
+        hideButton?.let { header.addView(it, LinearLayout.LayoutParams(dp(48), dp(48))) }
         addView(header)
         addView(footerContainer)
         addView(moveGrip, LayoutParams(-1, dp(MOVE_BAND_DP), Gravity.BOTTOM))
@@ -61,7 +84,15 @@ internal open class FloatingPanelFrame(
         renderChrome()
     }
 
-    fun setEditing(value: Boolean) {
+    override fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        KeyboardFontApplicator.track(this)
+        // This frame owns only its chrome typography. Content is owned by the specific
+        // composing/dictionary renderer or adapter. Traversing the whole tree here can
+        // overwrite renderer-specific exclusions such as icon-only candidate actions.
+        panelTitle?.let { KeyboardFontApplicator.apply(it, snapshot) }
+    }
+
+    open fun setEditing(value: Boolean) {
         if (editing == value) return
         editing = value
         handlingGesture = false
@@ -72,6 +103,12 @@ internal open class FloatingPanelFrame(
     fun setHeaderVisible(value: Boolean) {
         if (headerVisible == value) return
         headerVisible = value
+        renderChrome()
+    }
+
+    protected fun setMoveBandHeight(heightDp: Int) {
+        if (moveBandDp == heightDp) return
+        moveBandDp = heightDp
         renderChrome()
     }
 
@@ -92,6 +129,7 @@ internal open class FloatingPanelFrame(
     }
 
     private fun renderChrome() {
+        moveGrip.layoutParams = LayoutParams(-1, dp(moveBandDp), Gravity.BOTTOM)
         header.visibility = if (headerVisible) VISIBLE else GONE
         moveGrip.isEnabled = !editing
         moveGrip.alpha = if (editing) .35f else 1f
@@ -100,8 +138,12 @@ internal open class FloatingPanelFrame(
         editButton.setImageResource(if (editing) com.kazumaproject.core.R.drawable.baseline_check_24 else R.drawable.composing_guide_edit)
         editButton.contentDescription = context.getString(if (editing) R.string.composing_guide_done else R.string.composing_guide_edit)
         editButton.imageTintList = ColorStateList.valueOf(if (editing) accent else colors.icon)
-        editButton.background = RippleDrawable(ColorStateList.valueOf(ColorUtils.setAlphaComponent(colors.pressed, 80)), null,
-            GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) })
+        panelTitle?.setTextColor(inkColor)
+        hideButton?.imageTintList = ColorStateList.valueOf(colors.icon)
+        listOfNotNull(editButton, hideButton).forEach { button ->
+            button.background = RippleDrawable(ColorStateList.valueOf(ColorUtils.setAlphaComponent(colors.pressed, 80)), null,
+                GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) })
+        }
         background = GradientDrawable().apply {
             setColor(this@FloatingPanelFrame.colors.background)
             cornerRadius = dp(16).toFloat()
@@ -117,7 +159,7 @@ internal open class FloatingPanelFrame(
             topMargin = insets.top; bottomMargin = insets.bottom
         }
         footerContainer.layoutParams = LayoutParams(-1, dp(72), Gravity.BOTTOM).apply {
-            leftMargin = dp(24); rightMargin = dp(24); bottomMargin = dp(MOVE_BAND_DP + 28)
+            leftMargin = dp(24); rightMargin = dp(24); bottomMargin = dp(moveBandDp + 28)
         }
         edges.forEach { (edge, view) ->
             val horizontal = edge == GuideHandle.TOP || edge == GuideHandle.BOTTOM
@@ -127,14 +169,22 @@ internal open class FloatingPanelFrame(
                 GuideHandle.LEFT -> Gravity.LEFT or Gravity.CENTER_VERTICAL
                 else -> Gravity.RIGHT or Gravity.CENTER_VERTICAL
             }).apply {
-                if (edge == GuideHandle.BOTTOM) bottomMargin = dp(MOVE_BAND_DP)
-                if (edge == GuideHandle.LEFT || edge == GuideHandle.RIGHT) bottomMargin = dp(MOVE_BAND_DP / 2)
+                if (edge == GuideHandle.BOTTOM) bottomMargin = dp(moveBandDp)
+                if (edge == GuideHandle.LEFT || edge == GuideHandle.RIGHT) bottomMargin = dp(moveBandDp / 2)
             }
         }
         moveGrip.invalidate()
     }
 
-    fun handleAt(x: Float, y: Float): GuideHandle? {
+    private fun icon(drawable: Int, description: Int, action: () -> Unit) = ImageButton(context).apply {
+        setImageResource(drawable)
+        contentDescription = context.getString(description)
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        isFocusable = false
+        setOnClickListener { action() }
+    }
+
+    open fun handleAt(x: Float, y: Float): GuideHandle? {
         val moveRect = Rect().also(moveGrip::getHitRect)
         if (moveRect.contains(x.toInt(), y.toInt())) return if (editing) null else GuideHandle.MOVE
         if (!editing) return null
@@ -158,7 +208,7 @@ internal open class FloatingPanelFrame(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!handlingGesture) return super.onTouchEvent(event)
-        onHandleEvent(event)
+        dispatchHandleEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
             handlingGesture = false
             moveGrip.isPressed = false
@@ -166,6 +216,36 @@ internal open class FloatingPanelFrame(
         }
         return true
     }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        // Older accessibility services retain descendant screen bounds when only the window moves.
+        addOnLayoutChangeListener(positionAccessibilityListener)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeOnLayoutChangeListener(positionAccessibilityListener)
+        super.onDetachedFromWindow()
+    }
+
+    private val positionAccessibilityListener = OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        notifyAccessibilityBoundsChanged()
+    }
+
+    private fun notifyAccessibilityBoundsChanged() {
+        if (!context.getSystemService(android.view.accessibility.AccessibilityManager::class.java).isEnabled) return
+        val event = android.view.accessibility.AccessibilityEvent.obtain(
+            android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)
+        event.contentChangeTypes = android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE
+        sendAccessibilityEventUnchecked(event)
+    }
+
+    fun notifyWindowPositionChanged() {
+        // Deliver after the window traversal, when descendant screen coordinates are current.
+        postOnAnimation { post { if (isAttachedToWindow) notifyAccessibilityBoundsChanged() } }
+    }
+
+    protected open fun dispatchHandleEvent(event: MotionEvent) = onHandleEvent(event)
 
     override fun performClick(): Boolean = super.performClick()
 

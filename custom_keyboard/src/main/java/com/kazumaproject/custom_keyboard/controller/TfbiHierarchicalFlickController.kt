@@ -93,6 +93,8 @@ class TfbiHierarchicalFlickController(
 
     // フリックの中心座標 (x, y) を保持するスタック
     private val centerStack = ArrayDeque<Pair<Float, Float>>()
+    // One anchor per map: the point where that stage was entered.
+    private val stageAnchorStack = ArrayDeque<Pair<Float, Float>>()
 
     // 各階層への進入座標 (x, y) を保持するスタック (相対角度計算に使用)
     private val inflectionStack = ArrayDeque<Pair<Float, Float>>()
@@ -267,6 +269,7 @@ class TfbiHierarchicalFlickController(
         // スタックにプッシュ
         centerStack.push(event.x to event.y)
         inflectionStack.push(event.x to event.y)
+        stageAnchorStack.push(event.x to event.y)
         mapStack.push(rMap)
         highlightStack.push(TfbiFlickDirection.TAP)
         activeTfbiFlickStartPositionMode = tfbiFlickStartPositionMode
@@ -306,7 +309,7 @@ class TfbiHierarchicalFlickController(
         val relativeDy = event.y - inflectionY
 
         // 現在のフリック方向を計算
-        val direction = calculateDirection(
+        val candidate = calculateDirection(
             dx = dx,
             dy = dy,
             relativeDx = relativeDx,
@@ -314,6 +317,16 @@ class TfbiHierarchicalFlickController(
             threshold = currentFlickThreshold(),
             enabledDirections = enabledDirections,
             currentMap = currentM
+        )
+        val stageAnchor = stageAnchorStack.peek() ?: (centerX to centerY)
+        val direction = guardTfbiSecondStageDiagonal(
+            candidate = candidate,
+            entry = highlightStack.peek() ?: TfbiFlickDirection.TAP,
+            deltaX = event.x - stageAnchor.first,
+            deltaY = event.y - stageAnchor.second,
+            thresholdPx = currentFlickThreshold(),
+            enabledDirections = enabledDirections,
+            mode = currentGestureConfig().tfbiDiagonalRecognitionMode,
         )
 
         if (direction == TfbiFlickDirection.TAP) {
@@ -341,6 +354,7 @@ class TfbiHierarchicalFlickController(
                     mapStack.pop()
                     highlightStack.pop()
                     inflectionStack.pop()
+                    stageAnchorStack.pop()
 
                     // 親のマップとハイライト状態を復元
                     currentMap = mapStack.peek()
@@ -408,19 +422,6 @@ class TfbiHierarchicalFlickController(
             return // 変化なし
         }
 
-        if (currentHighlight != TfbiFlickDirection.TAP) {
-            val currentAngle = centerAngle(currentHighlight)
-            val newAngle = centerAngle(direction)
-            if (currentAngle != null && newAngle != null) {
-                val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
-                val currentDiff = angleDifference(angle, currentAngle)
-                val newDiff = angleDifference(angle, newAngle)
-                if (newDiff + 25.0 > currentDiff) {
-                    return
-                }
-            }
-        }
-
         // ハイライトを更新
         currentHighlight = direction
 
@@ -446,6 +447,7 @@ class TfbiHierarchicalFlickController(
                 mapStack.push(currentMap!!)
                 highlightStack.push(direction) // どの方向から来たかを記録
                 inflectionStack.push(event.x to event.y)
+                stageAnchorStack.push(event.x to event.y)
 
                 // ハイライトは開いた方向 (currentHighlight) を維持
                 // ただし、ジッターガードを有効にする
@@ -570,6 +572,7 @@ class TfbiHierarchicalFlickController(
         if (mapStack.size <= 1) return
         mapStack.pop()
         highlightStack.pop()
+        stageAnchorStack.pop()
         currentMap = mapStack.peek()
     }
 
@@ -605,6 +608,7 @@ class TfbiHierarchicalFlickController(
 
         // 4. 現在のスタック（パス）の情報をバックアップ
         val highlightPath = highlightStack.toList().reversed() // 例: [TAP, LEFT] (Size N)
+        val anchorPath = stageAnchorStack.toList().reversed()
         // [修正点] centerStack は DOWN 時の座標 1つだけ
         val originalCenter = centerStack.peek() ?: (event.x to event.y)
 
@@ -612,6 +616,7 @@ class TfbiHierarchicalFlickController(
         mapStack.clear()
         centerStack.clear()
         highlightStack.clear()
+        stageAnchorStack.clear()
 
         // 6. バックアップしたパスを使い、新しいルートマップでスタックを再構築
         var tempMap = newRootMap
@@ -627,6 +632,7 @@ class TfbiHierarchicalFlickController(
             // スタックにプッシュ
             mapStack.push(tempMap)
             highlightStack.push(highlight)
+            stageAnchorStack.push(anchorPath.getOrElse(i) { event.x to event.y })
 
             // 次の階層があるか？ (i < highlightPath.size - 1)
             if (i < highlightPath.size - 1) {
@@ -654,8 +660,12 @@ class TfbiHierarchicalFlickController(
         } else {
             // 失敗したらルートに戻す
             this.currentMap = newRootMap
+            mapStack.clear()
+            highlightStack.clear()
+            stageAnchorStack.clear()
             mapStack.push(newRootMap)
             highlightStack.push(highlightPath.firstOrNull() ?: TfbiFlickDirection.TAP)
+            stageAnchorStack.push(originalCenter)
         }
 
         // 9. ★ UI（ポップアップ）を即座に更新
@@ -916,6 +926,7 @@ class TfbiHierarchicalFlickController(
         slotEntryPositions.clear()
         mapStack.clear()
         highlightStack.clear()
+        stageAnchorStack.clear()
         currentMap = null
         slideExtendedNode = null
         currentHighlight = TfbiFlickDirection.TAP
@@ -991,9 +1002,7 @@ class TfbiHierarchicalFlickController(
                 TfbiFlickDirection.UP_RIGHT to -35.0
             )
 
-            val angleDx = if (mapStack.size > 1) relativeDx else dx
-            val angleDy = if (mapStack.size > 1) relativeDy else dy
-            val angle = Math.toDegrees(kotlin.math.atan2(angleDy.toDouble(), angleDx.toDouble()))
+            val angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble()))
 
             val closestDirectionData = enabledDirections.mapNotNull { direction ->
                 val targetAngle = centerAngles[direction] ?: return@mapNotNull null // TAP は除外
@@ -1005,7 +1014,7 @@ class TfbiHierarchicalFlickController(
             }.minByOrNull { it.second }
 
             var cand = closestDirectionData?.first ?: TfbiFlickDirection.TAP
-            if (closestDirectionData != null && closestDirectionData.second > modeSwitchAngleMargin) {
+            if (closestDirectionData == null || closestDirectionData.second > MAX_ANGLE_DIFFERENCE) {
                 cand = TfbiFlickDirection.TAP
             }
             cand

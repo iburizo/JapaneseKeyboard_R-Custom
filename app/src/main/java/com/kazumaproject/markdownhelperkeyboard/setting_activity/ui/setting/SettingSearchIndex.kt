@@ -6,6 +6,7 @@ import android.content.res.XmlResourceParser
 import androidx.annotation.IdRes
 import androidx.annotation.XmlRes
 import com.kazumaproject.markdownhelperkeyboard.R
+import com.kazumaproject.markdownhelperkeyboard.setting_activity.AppPreference
 import com.kazumaproject.markdownhelperkeyboard.variant.AppVariantConfig
 import org.xmlpull.v1.XmlPullParser
 import java.text.Normalizer
@@ -26,6 +27,12 @@ object SettingSearchIndex {
         val destinations: List<SettingDestination>,
     )
     private val extraKeywordsByKey = mapOf(
+        "floating_keyboard_hide_button_position" to listOf(
+            "floating", "hide", "arrow", "position", "フローティング", "下向き矢印", "やじるし", "隠す", "位置",
+        ),
+        "floating_keyboard_show_edit_button" to listOf(
+            "floating", "pencil", "resize", "フローティング", "鉛筆", "えんぴつ", "サイズ調整",
+        ),
         "keyboard_selection_preference" to listOf(
             "choose",
             "select",
@@ -81,6 +88,7 @@ object SettingSearchIndex {
         R.id.splitKeyboardPreferenceFragment,
         R.id.keyboardDisplayPreferenceFragment,
         R.id.inputMethodPreferenceFragment,
+        R.id.voiceInputPreferenceFragment,
         R.id.candidateConversionPreferenceFragment,
         R.id.conversionEnginePreferenceFragment,
         R.id.utilityCandidatePreferenceFragment,
@@ -226,7 +234,13 @@ object SettingSearchIndex {
             ?.takeIf { it.configuration == configuration }
             ?.let { return it.destinations }
 
-        val destinations = sources().flatMap { source -> readPreferenceXml(context, source) }
+        val destinations = sources().flatMap { source ->
+            val items = readPreferenceXml(context, source)
+            // New settings routes must resolve to the operation screen, not its legacy duplicate.
+            if (source.xmlRes == R.xml.pref_common_legacy) {
+                items.filterNot { it.key == AppPreference.INDEPENDENT_MULTI_TOUCH_KEY }
+            } else items
+        }
         destinationCache = DestinationCache(configuration, destinations)
         return destinations
     }
@@ -337,10 +351,12 @@ object SettingSearchIndex {
         }
 
     private fun sources(): List<PreferenceXmlSource> = buildList {
+        add(PreferenceXmlSource(R.xml.pref_common, R.id.commonPreferenceFragment, SettingCategory.ADVANCED))
         add(PreferenceXmlSource(R.xml.pref_common_legacy, R.id.legacyCommonPreferenceFragment, SettingCategory.ADVANCED))
         add(PreferenceXmlSource(R.xml.pref_keyboard_display, R.id.keyboardDisplayPreferenceFragment, SettingCategory.KEYBOARD_DISPLAY))
         add(PreferenceXmlSource(R.xml.pref_split_keyboard, R.id.splitKeyboardPreferenceFragment, SettingCategory.INPUT_METHOD))
         add(PreferenceXmlSource(R.xml.pref_input_method, R.id.inputMethodPreferenceFragment, SettingCategory.INPUT_METHOD))
+        add(PreferenceXmlSource(R.xml.pref_voice_input, R.id.voiceInputPreferenceFragment, SettingCategory.VOICE_INPUT))
         add(PreferenceXmlSource(R.xml.pref_candidate_conversion, R.id.candidateConversionPreferenceFragment, SettingCategory.CANDIDATE_CONVERSION))
         add(PreferenceXmlSource(R.xml.pref_conversion_engine, R.id.conversionEnginePreferenceFragment, SettingCategory.CONVERSION_ENGINE))
         add(PreferenceXmlSource(R.xml.pref_utility_candidate, R.id.utilityCandidatePreferenceFragment, SettingCategory.CONVERSION_ENGINE))
@@ -357,6 +373,7 @@ object SettingSearchIndex {
         add(PreferenceXmlSource(R.xml.pref_general_info, R.id.generalInfoPreferenceFragment, SettingCategory.APP_INFO))
         add(PreferenceXmlSource(R.xml.pref_advanced, R.id.advancedPreferenceFragment, SettingCategory.ADVANCED))
         add(PreferenceXmlSource(R.xml.pref_kana, R.id.kanaPreferenceFragment, SettingCategory.INPUT_METHOD))
+        add(PreferenceXmlSource(R.xml.pref_gojuon, R.id.gojuonPreferenceFragment, SettingCategory.INPUT_METHOD))
         add(PreferenceXmlSource(R.xml.pref_qwerty, R.id.qwertyPreferenceFragment, SettingCategory.INPUT_METHOD))
         add(PreferenceXmlSource(R.xml.pref_qwerty_english, R.id.qwertyEnglishPreferenceFragment, SettingCategory.INPUT_METHOD))
         add(PreferenceXmlSource(R.xml.pref_qwerty_romaji, R.id.qwertyRomajiPreferenceFragment, SettingCategory.INPUT_METHOD))
@@ -383,6 +400,7 @@ object SettingSearchIndex {
             SettingTabRegistry.TAB_CONVERSION_ENGINE -> SettingCategory.CONVERSION_ENGINE
             SettingTabRegistry.TAB_DICTIONARY -> SettingCategory.DICTIONARY
             SettingTabRegistry.TAB_TEXT_MACRO -> SettingCategory.TEXT_MACRO
+            SettingTabRegistry.TAB_VOICE_INPUT -> SettingCategory.VOICE_INPUT
             SettingTabRegistry.TAB_ZENZ,
             SettingTabRegistry.TAB_GEMMA -> SettingCategory.AI_CONVERSION
             SettingTabRegistry.TAB_COMMON -> SettingCategory.ADVANCED
@@ -514,6 +532,11 @@ object SettingSearchIndex {
             ) {
                 add("keyboard_touch_effect_type_preference")
             }
+            if (key.startsWith("voice_input_space_")) {
+                add(AppPreference.VOICE_INPUT_SPACE_REPLACEMENT_ENABLED_KEY)
+                add(AppPreference.VOICE_INPUT_SPACE_REPLACEMENT_KEY)
+                add(AppPreference.VOICE_INPUT_SPACE_CUSTOM_TEXT_KEY)
+            }
             if (!dependencyKey.isNullOrBlank()) {
                 add(dependencyKey)
             }
@@ -535,6 +558,12 @@ object SettingSearchIndex {
     ): SettingDestinationType {
         val fallback = fallbackDestinationType(key, destinationId, highlightPreferenceKey)
         if (SettingDestinations.isManagementDestinationKey(key)) return fallback
+        // These switches use DictionaryOverrideStore and compatibility checks.
+        // Search/frequent cards must navigate to their handler, not write default preferences.
+        if (com.kazumaproject.markdownhelperkeyboard.dictionary_override.ClassifiedDictionaries.all
+                .any { it.preferenceKey == key }) return fallback
+        // Open the shared screen so replacement/custom-text dependencies also apply to search/favorites.
+        if (destinationId == R.id.voiceInputPreferenceFragment) return fallback
 
         val simpleTagName = parser.name.substringAfterLast('.')
         return when (simpleTagName) {

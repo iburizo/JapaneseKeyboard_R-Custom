@@ -12,6 +12,9 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.kazumaproject.markdownhelperkeyboard.R
+import com.kazumaproject.core.ui.font.KeyboardFontAware
+import com.kazumaproject.core.ui.font.KeyboardFontApplicator
+import com.kazumaproject.core.ui.font.KeyboardFontSnapshot
 import kotlin.math.roundToInt
 
 /** Presentation only: gesture geometry and persistence belong to the controller/reducer. */
@@ -20,7 +23,9 @@ internal class ComposingGuideView(
     onEdit: () -> Unit,
     private val onTextSize: (Float, Boolean) -> Unit,
     onHandleEvent: (MotionEvent) -> Unit,
-) : FloatingPanelFrame(context, onEdit, onHandleEvent) {
+    title: CharSequence? = null,
+    onHide: (() -> Unit)? = null,
+) : FloatingPanelFrame(context, onEdit, onHandleEvent, title, onHide), KeyboardFontAware {
     private val textView = TextView(context).apply {
         setTextColor(inkColor)
         includeFontPadding = false
@@ -68,6 +73,11 @@ internal class ComposingGuideView(
     }
     private var showComposing = true
 
+    override fun setKeyboardFont(snapshot: KeyboardFontSnapshot) {
+        KeyboardFontApplicator.track(this)
+        KeyboardFontApplicator.applyToTextViews(this, snapshot) { true }
+    }
+
     init {
         id = R.id.composing_guide_root
         body.addView(readingScroll, LinearLayout.LayoutParams(-1, dp(28)).apply { bottomMargin = dp(4) })
@@ -84,6 +94,7 @@ internal class ComposingGuideView(
         footer.addView(sizeSlider, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(4) })
         footerContainer.addView(footer, LayoutParams(-1, -1))
         setFooterEnabled(true)
+        setKeyboardFont(KeyboardFontApplicator.processSnapshot)
     }
 
     override fun setColors(value: CandidatePanelColors) {

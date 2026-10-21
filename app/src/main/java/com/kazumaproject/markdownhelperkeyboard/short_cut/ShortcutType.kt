@@ -21,6 +21,30 @@ enum class ShortcutType(
         com.kazumaproject.core.R.drawable.book_3_24px,
         description = "定型文"
     ),
+    FLOATING_LEARN_DICTIONARY(
+        "floating_learn_dictionary",
+        com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_learn_dictionary,
+        activeIconResId = com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_learn_dictionary_active,
+        description = "学習辞書フロート"
+    ),
+    FLOATING_USER_DICTIONARY(
+        "floating_user_dictionary",
+        com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_user_dictionary,
+        activeIconResId = com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_user_dictionary_active,
+        description = "ユーザー辞書フロート"
+    ),
+    FLOATING_USER_TEMPLATE(
+        "floating_user_template",
+        com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_user_template,
+        activeIconResId = com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_user_template_active,
+        description = "定型文フロート"
+    ),
+    FLOATING_CLIPBOARD(
+        "floating_clipboard",
+        com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_clipboard,
+        activeIconResId = com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_clipboard_active,
+        description = "クリップボードフロート"
+    ),
     TEXT_MACRO(
         "text_macro",
         com.kazumaproject.core.R.drawable.book_3_24px,
@@ -102,6 +126,12 @@ enum class ShortcutType(
         activeIconResId =
             com.kazumaproject.markdownhelperkeyboard.R.drawable.gemma_handwriting_active_24,
         description = "Gemma手書き"
+    ),
+    FLOATING_CURSOR(
+        "floating_cursor",
+        com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_cursor,
+        activeIconResId = com.kazumaproject.markdownhelperkeyboard.R.drawable.floating_cursor_active,
+        description = "カーソル・トラックパッドフロート"
     ),
     CLIP_BOARD(
         "clip_board",

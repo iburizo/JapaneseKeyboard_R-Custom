@@ -12,7 +12,7 @@ fun dispatchSumireSpecialKeyRuntimeAction(
     flickDirection: FlickDirection,
     fallbackAction: KeyAction?,
     isFlick: Boolean,
-    isComposing: Boolean,
+    isComposing: Boolean = false,
     resolve: (KeyData, SumireSpecialKeyDirection) -> ResolvedSumireSpecialKeyAction,
     dispatch: (KeyAction, Boolean) -> Unit
 ): SumireSpecialKeyRuntimeDispatchResult {
