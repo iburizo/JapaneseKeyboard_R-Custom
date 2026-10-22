@@ -641,6 +641,15 @@ object SettingDestinations {
             iconRes = CoreR.drawable.content_paste_24px,
         ),
         destination(
+            key = "setting_route_custom_features",
+            title = context.getString(R.string.custom_features_setting_title),
+            summary = context.getString(R.string.custom_features_setting_summary),
+            category = SettingCategory.OPERATION_FEEDBACK,
+            keywords = listOf("custom", "swipe", "cursor", "delete", "スワイプ", "カスタム", "長音", "3段フリック"),
+            destinationId = R.id.customFeaturesPreferenceFragment,
+            iconRes = CoreR.drawable.star_24px,
+        ),
+        destination(
             key = "setting_route_operation_feedback",
             title = context.getString(R.string.setting_category_operation_feedback_title),
             summary = context.getString(R.string.setting_category_operation_feedback_summary),

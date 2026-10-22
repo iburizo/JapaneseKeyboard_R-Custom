@@ -45,15 +45,6 @@
             android:title="@string/sumire_keyboard_style_title" />
 
         <ListPreference
-            android:defaultValue="up_right"
-            android:dialogTitle="@string/sumire_u_extension_mode_dialog_title"
-            android:entries="@array/sumire_u_extension_mode_options"
-            android:entryValues="@array/sumire_u_extension_mode_values"
-            android:key="sumire_u_extension_mode_preference"
-            android:summary="%s"
-            android:title="@string/sumire_u_extension_mode_title" />
-
-        <ListPreference
             android:defaultValue="default"
             android:dialogTitle="@string/sumire_flick_rotation_title"
             android:entries="@array/sumire_flick_rotation_entries"
@@ -149,21 +140,6 @@
             android:key="sumire_custom_angle_preference"
             android:title="@string/sumire_custom_angle_preference_title"
             app:summary="@string/sumire_custom_angle_preference_summary" />
-
-        <Preference
-            android:key="hierarchical_flick_angle_margin_preference"
-            android:title="@string/hierarchical_flick_angle_margin_preference_title"
-            app:summary="@string/hierarchical_flick_angle_margin_preference_summary" />
-
-        <Preference
-            android:key="circular_slot_action_setting_preference"
-            android:title="Circular Flick SLOT4〜6 設定"
-            app:summary="日本語・英語・数字モードの通常キーに、追加フリックアクションを設定します" />
-
-        <Preference
-            android:key="sumire_special_key_editor_preference"
-            android:title="@string/sumire_special_key_editor_preference_title"
-            app:summary="@string/sumire_special_key_editor_preference_summary" />
     </PreferenceCategory>
 
 </PreferenceScreen>

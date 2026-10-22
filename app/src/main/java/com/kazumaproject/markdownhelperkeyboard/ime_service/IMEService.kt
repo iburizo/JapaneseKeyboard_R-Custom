@@ -24438,8 +24438,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                 isSpaceKeyLongPressed = false
             }
 
-            cursorKeySwipeMoveEnableProvider = { appPreference.cursor_key_swipe_move_preference }
-            deleteKeySwipeSelectionEnableProvider = { appPreference.delete_key_swipe_selection_preference }
+            cursorKeySwipeMoveEnableProvider = { appPreference.cursor_key_swipe_move_enable_preference }
+            deleteKeySwipeSelectionEnableProvider = { appPreference.delete_key_swipe_selection_enable_preference }
             onSelectionDeleteSwipeStartHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler
             onSelectionDeleteSwipeUpdateHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeUpdateHandler
             onSelectionDeleteSwipeEndHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler

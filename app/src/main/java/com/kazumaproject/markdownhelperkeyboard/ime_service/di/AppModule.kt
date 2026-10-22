@@ -279,6 +279,9 @@ object AppModule {
             com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.deleteKeySwipeSelectionEnableProvider = {
                 preference.delete_key_swipe_selection_enable_preference
             }
+            com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.hierarchicalFlickTransitionVibrationProvider = {
+                (preference.vibration_preference ?: true) && preference.hierarchical_flick_transition_vibration_preference
+            }
             com.kazumaproject.markdownhelperkeyboard.ime_service.SelectionDeleteGlobalBinder.bind(
                 inputConnectionProvider = { null },
                 isComposingActive = { false },

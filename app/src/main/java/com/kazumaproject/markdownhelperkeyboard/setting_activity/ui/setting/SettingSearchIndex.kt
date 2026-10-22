@@ -369,6 +369,7 @@ object SettingSearchIndex {
             add(PreferenceXmlSource(R.xml.pref_gemma, R.id.gemmaPreferenceFragment, SettingCategory.AI_CONVERSION))
         }
         add(PreferenceXmlSource(R.xml.pref_clipboard_shortcut, R.id.clipboardShortcutPreferenceFragment, SettingCategory.CLIPBOARD_SHORTCUT))
+        add(PreferenceXmlSource(R.xml.pref_custom_features, R.id.customFeaturesPreferenceFragment, SettingCategory.OPERATION_FEEDBACK))
         add(PreferenceXmlSource(R.xml.pref_operation_feedback, R.id.operationFeedbackPreferenceFragment, SettingCategory.OPERATION_FEEDBACK))
         add(PreferenceXmlSource(R.xml.pref_general_info, R.id.generalInfoPreferenceFragment, SettingCategory.APP_INFO))
         add(PreferenceXmlSource(R.xml.pref_advanced, R.id.advancedPreferenceFragment, SettingCategory.ADVANCED))

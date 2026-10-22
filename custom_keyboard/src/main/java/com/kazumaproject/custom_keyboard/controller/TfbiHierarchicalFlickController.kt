@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -368,6 +369,13 @@ class TfbiHierarchicalFlickController(
                     // UIを親マップに戻す
                     setupStageUI(currentMap!!)
 
+                    if (com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.hierarchicalFlickTransitionVibrationProvider?.invoke() != false) {
+                        view.performHapticFeedback(
+                            HapticFeedbackConstants.KEYBOARD_TAP,
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        )
+                    }
+
                     popupView?.highlightDirection(currentHighlight)
                     notifySelectionChanged()
                     return // イベント処理終了
@@ -458,6 +466,13 @@ class TfbiHierarchicalFlickController(
                 // ポップアップをサブメニューの内容で更新
                 setupStageUI(currentMap!!)
                 popupView?.highlightDirection(currentHighlight)
+
+                if (com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.hierarchicalFlickTransitionVibrationProvider?.invoke() != false) {
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.KEYBOARD_TAP,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
+                }
             }
 
             null -> {

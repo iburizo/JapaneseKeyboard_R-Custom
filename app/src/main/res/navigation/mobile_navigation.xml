@@ -256,6 +256,11 @@
         android:label="@string/category_sumire_input_keyboard_title" />
 
     <fragment
+        android:id="@+id/customFeaturesPreferenceFragment"
+        android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.CustomFeaturesPreferenceFragment"
+        android:label="@string/custom_features_setting_title" />
+
+    <fragment
         android:id="@+id/customKeyboardPreferenceFragment"
         android:name="com.kazumaproject.markdownhelperkeyboard.setting_activity.ui.setting.CustomKeyboardPreferenceFragment"
         android:label="@string/category_custom_keyboard_title" />

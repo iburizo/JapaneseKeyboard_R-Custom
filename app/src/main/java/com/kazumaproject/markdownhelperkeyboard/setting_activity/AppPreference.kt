@@ -101,6 +101,7 @@ object AppPreference {
     const val SUMIRE_U_EXTENSION_MODE_KEY = "sumire_u_extension_mode_preference"
     const val CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY = "cursor_key_swipe_move_enable_preference"
     const val DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY = "delete_key_swipe_selection_enable_preference"
+    const val HIERARCHICAL_FLICK_TRANSITION_VIBRATION_KEY = "hierarchical_flick_transition_vibration_preference"
     const val DATE_CANDIDATE_ORDER_KEY = "date_candidate_order"
     const val DATE_CANDIDATE_ENABLED_FORMATS_KEY = "date_candidate_enabled_formats"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
@@ -342,6 +343,8 @@ object AppPreference {
         Pair("hierarchical_flick_mode_switch_angle_margin_preference", 20)
     private val HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER =
         Pair("hierarchical_flick_stage_threshold_multiplier_preference", 100)
+    private val HIERARCHICAL_FLICK_TRANSITION_VIBRATION_PREFERENCE =
+        Pair(HIERARCHICAL_FLICK_TRANSITION_VIBRATION_KEY, true)
 
     private val CUSTOM_KEYBOARD_TWO_WORDS_OUTPUTS =
         Pair("custom_keyboard_two_words_preference", true)
@@ -1987,6 +1990,15 @@ object AppPreference {
                 HIERARCHICAL_FLICK_STAGE_THRESHOLD_MULTIPLIER.first,
                 (value * 100).toInt().coerceIn(100, 250)
             )
+        }
+
+    var hierarchical_flick_transition_vibration_preference: Boolean
+        get() = preferences.getBoolean(
+            HIERARCHICAL_FLICK_TRANSITION_VIBRATION_PREFERENCE.first,
+            HIERARCHICAL_FLICK_TRANSITION_VIBRATION_PREFERENCE.second
+        )
+        set(value) = preferences.edit {
+            it.putBoolean(HIERARCHICAL_FLICK_TRANSITION_VIBRATION_PREFERENCE.first, value)
         }
 
     var sumire_u_extension_mode_preference: String
