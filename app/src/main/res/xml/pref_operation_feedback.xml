@@ -129,6 +129,12 @@
             android:title="@string/cursor_move_target_pairs_title" />
 
         <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="cursor_key_swipe_move_enable_preference"
+            android:summary="@string/cursor_key_swipe_move_summary"
+            android:title="@string/cursor_key_swipe_move_title" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="conversion_key_swipe_cursor_move_preference"
             android:summary="@string/pref_summary_space_longpress_cursor"
