@@ -193,6 +193,8 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
     private var inputModeChangedListener: ((InputMode) -> Unit)? = null
     private var qwertyNumberModeRequestedListener: (() -> Unit)? = null
     private var attachedToWindowListener: (() -> Unit)? = null
+    var cursorSelectionToggleHandler: (() -> Unit)? = null
+    var cursorSelectionEndHandler: (() -> Unit)? = null
     private val flickTextPreviewEmitter = FlickTextPreviewEmitter()
 
     private var flickSensitivity: Int = 100
@@ -367,7 +369,13 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
     // Map each Key enum to its corresponding View (Button/ImageButton/Switch)
     private var listKeys: Map<Key, Any>
 
+    var onCursorModeChangedListener: ((Boolean) -> Unit)? = null
+
     private var isCursorMode = false
+        set(value) {
+            field = value
+            onCursorModeChangedListener?.invoke(value)
+        }
     private val baseKeyMargins: MutableMap<Int, BaseMargins> = mutableMapOf()
 
     // Theme Variables (Initialized with defaults)
@@ -1531,6 +1539,9 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
         flickTextPreviewEmitter.listener = null
         longPressJob?.cancel()
         longPressJob = null
+        if (isCursorMode) {
+            cursorSelectionEndHandler?.invoke()
+        }
         isCursorMode = false
         // The IME service reuses this view across input-view detach/attach cycles, including
         // rotation. Keep service-owned listeners until the service replaces the view; only
@@ -1573,6 +1584,14 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
         if (view == null || event == null || visibility != View.VISIBLE) return false
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             independentMultiTouchForCurrentGesture = independentMultiTouchEnabled
+        }
+        if (isCursorMode && event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
+            val pointerId = event.getPointerId(event.actionIndex)
+            val primaryPointer = if (::pressedKey.isInitialized) pressedKey.pointer else 0
+            if (pointerId != primaryPointer) {
+                cursorSelectionToggleHandler?.invoke()
+            }
+            return true
         }
         if (independentMultiTouchForCurrentGesture && event.actionMasked == MotionEvent.ACTION_CANCEL) {
             cancelActiveTouch(KeyTouchCancelReason.ActionCancel)
@@ -1639,6 +1658,7 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
                         }
                         handleCurrentInputModeSwitch(currentInputMode.value)
                         isCursorMode = false
+                        cursorSelectionEndHandler?.invoke()
                         return false
                     }
 
@@ -1742,6 +1762,11 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
                     popupWindowActive.hide()
                     longPressJob?.cancel()
                     if (isCursorMode) {
+                        val pointerId = event.getPointerId(event.actionIndex)
+                        val primaryPointer = if (::pressedKey.isInitialized) pressedKey.pointer else 0
+                        if (pointerId != primaryPointer) {
+                            cursorSelectionToggleHandler?.invoke()
+                        }
                         return true
                     }
                     Log.d(
@@ -2005,6 +2030,7 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
 
         if (isCursorMode) {
             handleCurrentInputModeSwitch(currentInputMode.value)
+            cursorSelectionEndHandler?.invoke()
         }
         isCursorMode = false
     }

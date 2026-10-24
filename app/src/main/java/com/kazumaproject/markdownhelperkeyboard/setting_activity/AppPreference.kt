@@ -102,6 +102,12 @@ object AppPreference {
     const val CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY = "cursor_key_swipe_move_enable_preference"
     const val DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY = "delete_key_swipe_selection_enable_preference"
     const val HIERARCHICAL_FLICK_TRANSITION_VIBRATION_KEY = "hierarchical_flick_transition_vibration_preference"
+    const val GESTURE_TWO_FINGER_SWIPE_LEFT_KEY = "gesture_two_finger_swipe_left_preference"
+    const val GESTURE_TWO_FINGER_SWIPE_RIGHT_KEY = "gesture_two_finger_swipe_right_preference"
+    const val GESTURE_TWO_FINGER_SWIPE_UP_KEY = "gesture_two_finger_swipe_up_preference"
+    const val GESTURE_TWO_FINGER_SWIPE_DOWN_KEY = "gesture_two_finger_swipe_down_preference"
+    const val GESTURE_TWO_FINGER_PINCH_IN_KEY = "gesture_two_finger_pinch_in_preference"
+    const val GESTURE_TWO_FINGER_PINCH_OUT_KEY = "gesture_two_finger_pinch_out_preference"
     const val DATE_CANDIDATE_ORDER_KEY = "date_candidate_order"
     const val DATE_CANDIDATE_ENABLED_FORMATS_KEY = "date_candidate_enabled_formats"
     private const val UTILITY_DECIMAL_PRECISION_PREFIX = "decimal:"
@@ -494,6 +500,18 @@ object AppPreference {
         Pair(CURSOR_KEY_SWIPE_MOVE_ENABLE_KEY, true)
     private val DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE =
         Pair(DELETE_KEY_SWIPE_SELECTION_ENABLE_KEY, true)
+    private val GESTURE_TWO_FINGER_SWIPE_LEFT_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_SWIPE_LEFT_KEY, "none")
+    private val GESTURE_TWO_FINGER_SWIPE_RIGHT_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_SWIPE_RIGHT_KEY, "none")
+    private val GESTURE_TWO_FINGER_SWIPE_UP_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_SWIPE_UP_KEY, "none")
+    private val GESTURE_TWO_FINGER_SWIPE_DOWN_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_SWIPE_DOWN_KEY, "none")
+    private val GESTURE_TWO_FINGER_PINCH_IN_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_PINCH_IN_KEY, "none")
+    private val GESTURE_TWO_FINGER_PINCH_OUT_PREFERENCE =
+        Pair(GESTURE_TWO_FINGER_PINCH_OUT_KEY, "none")
     private val SUMIRE_LAST_INPUT_MODE_PREFERENCE =
         Pair("sumire_last_input_mode_preference", "japanese")
     private val SUMIRE_LAST_INPUT_MODE_PRESENTATION_PREFERENCE =
@@ -2026,6 +2044,60 @@ object AppPreference {
         )
         set(value) = preferences.edit {
             it.putBoolean(DELETE_KEY_SWIPE_SELECTION_ENABLE_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_swipe_left_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_SWIPE_LEFT_PREFERENCE.first,
+            GESTURE_TWO_FINGER_SWIPE_LEFT_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_SWIPE_LEFT_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_SWIPE_LEFT_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_swipe_right_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_SWIPE_RIGHT_PREFERENCE.first,
+            GESTURE_TWO_FINGER_SWIPE_RIGHT_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_SWIPE_RIGHT_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_SWIPE_RIGHT_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_swipe_up_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_SWIPE_UP_PREFERENCE.first,
+            GESTURE_TWO_FINGER_SWIPE_UP_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_SWIPE_UP_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_SWIPE_UP_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_swipe_down_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_SWIPE_DOWN_PREFERENCE.first,
+            GESTURE_TWO_FINGER_SWIPE_DOWN_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_SWIPE_DOWN_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_SWIPE_DOWN_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_pinch_in_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_PINCH_IN_PREFERENCE.first,
+            GESTURE_TWO_FINGER_PINCH_IN_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_PINCH_IN_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_PINCH_IN_PREFERENCE.first, value)
+        }
+
+    var gesture_two_finger_pinch_out_preference: String
+        get() = preferences.getString(
+            GESTURE_TWO_FINGER_PINCH_OUT_PREFERENCE.first,
+            GESTURE_TWO_FINGER_PINCH_OUT_PREFERENCE.second
+        ) ?: GESTURE_TWO_FINGER_PINCH_OUT_PREFERENCE.second
+        set(value) = preferences.edit {
+            it.putString(GESTURE_TWO_FINGER_PINCH_OUT_PREFERENCE.first, value)
         }
 
     var independent_multi_touch_preference: Boolean

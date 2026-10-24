@@ -50,6 +50,9 @@ sealed class KeyAction {
     data object UndoLastDelete : KeyAction()
     data object UndoCommit : KeyAction()
     data object CommitDialNumbers : KeyAction()
+    data object Undo : KeyAction()
+    data object Redo : KeyAction()
+    data object HideKeyboard : KeyAction()
 
     data object SwitchDirectMode : KeyAction()
 

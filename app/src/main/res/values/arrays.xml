@@ -435,4 +435,28 @@
         <item>legacy</item>
         <item>stable</item>
     </string-array>
+
+    <string-array name="multitouch_gesture_action_entries">
+        <item>@string/multitouch_gesture_action_none</item>
+        <item>@string/multitouch_gesture_action_undo_commit</item>
+        <item>@string/multitouch_gesture_action_undo</item>
+        <item>@string/multitouch_gesture_action_redo</item>
+        <item>@string/multitouch_gesture_action_select_all</item>
+        <item>@string/multitouch_gesture_action_copy</item>
+        <item>@string/multitouch_gesture_action_cut</item>
+        <item>@string/multitouch_gesture_action_paste</item>
+        <item>@string/multitouch_gesture_action_hide_keyboard</item>
+    </string-array>
+
+    <string-array name="multitouch_gesture_action_values">
+        <item>none</item>
+        <item>undo_commit</item>
+        <item>undo</item>
+        <item>redo</item>
+        <item>select_all</item>
+        <item>copy</item>
+        <item>cut</item>
+        <item>paste</item>
+        <item>hide_keyboard</item>
+    </string-array>
 </resources>

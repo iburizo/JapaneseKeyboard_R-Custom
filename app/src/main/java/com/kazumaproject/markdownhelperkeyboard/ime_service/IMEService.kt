@@ -14,6 +14,8 @@ import com.kazumaproject.markdownhelperkeyboard.ime_service.floating_cursor.Curs
 import com.kazumaproject.markdownhelperkeyboard.ime_service.floating_cursor.CursorComposingExpectation
 import com.kazumaproject.markdownhelperkeyboard.ime_service.floating_cursor.FloatingCursorController
 import com.kazumaproject.markdownhelperkeyboard.ime_service.floating_cursor.FloatingCursorSettings
+import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureType
+import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureSettings
 import com.kazumaproject.core.domain.flick.FlickTextPreviewEvent
 import com.kazumaproject.markdownhelperkeyboard.ime_service.floating_dictionary.FloatingDictionaryStore
 import android.annotation.SuppressLint
@@ -1047,6 +1049,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     refreshFloatingCursor()
                     updateShortcutActiveStates()
                 }
+            }
+            if (key == null || key.startsWith("gesture_two_finger_")) {
+                runOnMainThread { updateMultiTouchGestureSettings() }
             }
         }
 
@@ -3288,6 +3293,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                 setRecognitionListener(createVoiceRecognitionListener())
             }
         }
+        initCursorSelectionBinding()
     }
 
     private fun observeDeleteKeyFlickTargets() {
@@ -3440,7 +3446,25 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
     private var dictionaryFloats: FloatingDictionaryController? = null
     private var floatingCursor: FloatingCursorController? = null
-    private val cursorSettings by lazy { FloatingCursorSettings(runtimeInputSharedPreferences) }
+    private val cursorSettings by lazy {
+        val prefs = if (::runtimeInputSharedPreferences.isInitialized) {
+            runtimeInputSharedPreferences
+        } else {
+            val targetCtx = runCatching { applicationContext }.getOrNull()
+                ?: runCatching { baseContext }.getOrNull()
+                ?: runCatching {
+                    Class.forName("androidx.test.core.app.ApplicationProvider")
+                        .getMethod("getApplicationContext")
+                        .invoke(null) as? Context
+                }.getOrNull()
+            if (targetCtx != null) {
+                PreferenceManager.getDefaultSharedPreferences(targetCtx)
+            } else {
+                PreferenceManager.getDefaultSharedPreferences(this)
+            }
+        }
+        FloatingCursorSettings(prefs)
+    }
     // The existing selectMode changes character-key labels and actions. This state owns only cursor selection.
     private var cursorSelectionMode = false
     private var cursorInputTracking = false
@@ -3506,6 +3530,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         if (hasCursorPreedit()) return
         cancelCursorOperations()
         cursorSelectionMode = !cursorSelectionMode
+        vibrate()
         floatingCursor?.updateSelection(cursorSelectionMode, true)
     }
 
@@ -3530,6 +3555,20 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         cursorSnapshotRevision.incrementAndGet()
         cursorSynchronization.invalidateSnapshot()
         floatingCursor?.updateSelection(false, false)
+    }
+
+    private fun initCursorSelectionBinding() {
+        CursorSelectionGlobalBinder.bind(
+            toggleSelection = {
+                toggleCursorSelection()
+            },
+            endSelection = {
+                endCursorSelectionForInput()
+            },
+            isSelectionMode = {
+                cursorSelectionMode
+            }
+        )
     }
 
     private fun resetCursorInputSession() {
@@ -6340,6 +6379,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                 )
                 ModeKeySizing.applyTenkey(floatingKeyboardLayoutBinding.keyboardViewFloating)
                 floatingKeyboardLayoutBinding.keyboardViewFloating.apply {
+                    cursorSelectionToggleHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler?.invoke() }
+                    cursorSelectionEndHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler?.invoke() }
                     setOnFlickListener(object : FlickListener {
                         override fun onFlick(gestureType: GestureType, key: Key, char: Char?) {
                             if (isKeyboardLayoutEditModeActive()) return
@@ -6674,6 +6715,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         gemmaFloatingWindow?.clear()
         floatingCursor?.destroy()
         floatingCursor = null
+        CursorSelectionGlobalBinder.unbind()
         resetCursorInputSession()
         cursorWorker?.cancel()
         cursorMoves.close()
@@ -8186,6 +8228,23 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         }
 
         mainLayoutBinding = MainLayoutBinding.inflate(LayoutInflater.from(ctx)).also { binding ->
+            binding.root.onMultiTouchGestureListener = { type, action ->
+                handleMultiTouchGesture(type, action)
+            }
+            binding.root.multiTouchGestureDetector.settings = loadMultiTouchGestureSettings()
+            binding.keyboardView.onCursorModeChangedListener = {
+                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = it
+            }
+            binding.qwertyView.onCursorModeChangedListener = {
+                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = it
+            }
+            binding.root.multiTouchGestureDetector.isTouchInsideValidArea = { _, y ->
+                val suggestionBottom = if (binding.suggestionViewParent.isShown) binding.suggestionViewParent.bottom.toFloat() else 0f
+                val toolbarBottom = if (binding.shortcutToolbarRecyclerview.isShown) binding.shortcutToolbarRecyclerview.bottom.toFloat() else 0f
+                val tabBottom = if (binding.candidateTabLayout.isShown) binding.candidateTabLayout.bottom.toFloat() else 0f
+                val topBoundary = maxOf(suggestionBottom, toolbarBottom, tabBottom)
+                y >= topBoundary
+            }
             binding.root.fallbackTouchTargetProvider = {
                 sequenceOf(
                     binding.keyboardView,
@@ -8211,6 +8270,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         lastAppliedFloatingEditHeightPx = -1
 
         floatingKeyboardBinding?.let { floatingKeyboardLayoutBinding ->
+            floatingKeyboardLayoutBinding.root.onMultiTouchGestureListener = { type, action ->
+                handleMultiTouchGesture(type, action)
+            }
+            floatingKeyboardLayoutBinding.root.multiTouchGestureDetector.settings = loadMultiTouchGestureSettings()
+            floatingKeyboardLayoutBinding.keyboardViewFloating.onCursorModeChangedListener = {
+                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = it
+            }
+            floatingKeyboardLayoutBinding.qwertyViewFloating.onCursorModeChangedListener = {
+                com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = it
+            }
             setFloatingKeyboardListeners(floatingKeyboardLayoutBinding = floatingKeyboardLayoutBinding)
             val heightPref = tenkeyHeightPreferenceValue ?: 280
             val widthPref = tenkeyWidthPreferenceValue ?: 100
@@ -11379,6 +11448,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         )
         ModeKeySizing.applyTenkey(floatingKeyboardLayoutBinding.keyboardViewFloating)
         floatingKeyboardLayoutBinding.keyboardViewFloating.apply {
+            cursorSelectionToggleHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler?.invoke() }
+            cursorSelectionEndHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler?.invoke() }
             setOnFlickListener(object : FlickListener {
                 override fun onFlick(gestureType: GestureType, key: Key, char: Char?) {
                     activateSplitView(floatingKeyboardLayoutBinding.keyboardViewFloating)
@@ -11495,6 +11566,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         mainView: MainLayoutBinding
     ) {
         mainView.keyboardView.apply {
+            cursorSelectionToggleHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler?.invoke() }
+            cursorSelectionEndHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler?.invoke() }
             setOnAttachedToWindowListener {
                 rebindMainKeyboardInputListeners(mainView)
             }
@@ -15323,14 +15396,20 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.ToggleKatakana -> {}
                     KeyAction.DeleteUntilSymbol -> {}
                     KeyAction.MoveCursorDown -> {
+                        val insertString = inputString.value
                         if (cycleFocusedBunsetsuCandidate(delta = 1)) {
                             refreshEditHistoryUi()
+                        } else if (insertString.isEmpty() && stringInTail.get().isEmpty()) {
+                            moveCursorVertically(CursorDirection.DOWN)
                         }
                     }
 
                     KeyAction.MoveCursorUp -> {
+                        val insertString = inputString.value
                         if (cycleFocusedBunsetsuCandidate(delta = -1)) {
                             refreshEditHistoryUi()
+                        } else if (insertString.isEmpty() && stringInTail.get().isEmpty()) {
+                            moveCursorVertically(CursorDirection.UP)
                         }
                     }
 
@@ -15369,6 +15448,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursor -> {}
                     KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
+                    KeyAction.Undo, KeyAction.Redo, KeyAction.HideKeyboard -> {}
                 }
             }
 
@@ -15467,6 +15547,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursor -> {}
                     KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
+                    KeyAction.Undo, KeyAction.Redo, KeyAction.HideKeyboard -> {}
                 }
             }
 
@@ -15642,6 +15723,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursor -> {}
                     KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
+                    KeyAction.Undo, KeyAction.Redo, KeyAction.HideKeyboard -> {}
                 }
             }
 
@@ -15937,6 +16019,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.DeleteAfterCursor -> {}
                     KeyAction.UndoCommit, KeyAction.CommitDialNumbers -> {}
                     KeyAction.CommitAndInsertSpace -> {}
+                    KeyAction.Undo, KeyAction.Redo, KeyAction.HideKeyboard -> {}
                 }
             }
 
@@ -16456,6 +16539,15 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     }
 
                     KeyAction.CommitAndInsertSpace -> {}
+                    KeyAction.Undo -> {
+                        undoLastHistoryEntry()
+                    }
+                    KeyAction.Redo -> {
+                        redoLastHistoryEntry()
+                    }
+                    KeyAction.HideKeyboard -> {
+                        requestHideSelf(0)
+                    }
                 }
             }
         })
@@ -24443,6 +24535,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             onSelectionDeleteSwipeStartHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeStartHandler
             onSelectionDeleteSwipeUpdateHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeUpdateHandler
             onSelectionDeleteSwipeEndHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler
+            cursorSelectionToggleHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler?.invoke() }
+            cursorSelectionEndHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler?.invoke() }
             
             setOnQWERTYKeyListener(object : QWERTYKeyListener {
                 override fun onPressedQWERTYKey(qwertyKey: QWERTYKey) {
@@ -25913,6 +26007,52 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             }
         }
         refreshEditHistoryUi()
+    }
+
+    private fun handleMultiTouchGesture(type: MultiTouchGestureType, action: KeyAction) {
+        vibrate()
+        when (action) {
+            is KeyAction.UndoCommit -> performPendingReconversion()
+            is KeyAction.Undo -> undoLastHistoryEntry()
+            is KeyAction.Redo -> redoLastHistoryEntry()
+            is KeyAction.SelectAll -> selectAllText()
+            is KeyAction.Copy -> copyAction()
+            is KeyAction.Cut -> cutAction()
+            is KeyAction.Paste -> pasteAction()
+            is KeyAction.HideKeyboard -> requestHideSelf(0)
+            else -> Unit
+        }
+    }
+
+    private fun loadMultiTouchGestureSettings(): MultiTouchGestureSettings {
+        return MultiTouchGestureSettings(
+            swipeLeftAction = parseGestureAction(appPreference.gesture_two_finger_swipe_left_preference),
+            swipeRightAction = parseGestureAction(appPreference.gesture_two_finger_swipe_right_preference),
+            swipeUpAction = parseGestureAction(appPreference.gesture_two_finger_swipe_up_preference),
+            swipeDownAction = parseGestureAction(appPreference.gesture_two_finger_swipe_down_preference),
+            pinchInAction = parseGestureAction(appPreference.gesture_two_finger_pinch_in_preference),
+            pinchOutAction = parseGestureAction(appPreference.gesture_two_finger_pinch_out_preference)
+        )
+    }
+
+    private fun parseGestureAction(value: String?): KeyAction {
+        return when (value) {
+            "undo_commit" -> KeyAction.UndoCommit
+            "undo" -> KeyAction.Undo
+            "redo" -> KeyAction.Redo
+            "select_all" -> KeyAction.SelectAll
+            "copy" -> KeyAction.Copy
+            "cut" -> KeyAction.Cut
+            "paste" -> KeyAction.Paste
+            "hide_keyboard" -> KeyAction.HideKeyboard
+            else -> KeyAction.DoNothing
+        }
+    }
+
+    private fun updateMultiTouchGestureSettings() {
+        val settings = loadMultiTouchGestureSettings()
+        mainLayoutBinding?.root?.multiTouchGestureDetector?.settings = settings
+        floatingKeyboardBinding?.root?.multiTouchGestureDetector?.settings = settings
     }
 
     private fun handleExactLengthMatch(

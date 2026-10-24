@@ -46,4 +46,7 @@
     <string name="voice_input">Voice Input</string>
     <string name="action_switch_romaji_english">Romaji / English Switch</string>
     <string name="action_switch_to_hiragana_mode">Switch to Hiragana Mode</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_redo">Redo</string>
+    <string name="action_hide_keyboard">Hide Keyboard</string>
 </resources>

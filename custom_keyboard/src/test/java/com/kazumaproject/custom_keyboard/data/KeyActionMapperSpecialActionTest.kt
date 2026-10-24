@@ -19,6 +19,10 @@ class KeyActionMapperSpecialActionTest {
             KeyAction.MoveCursorDown to "MoveCursorDown",
             KeyAction.Cut to "Cut",
             KeyAction.SelectAll to "SelectAll",
+            KeyAction.UndoCommit to "UndoCommit",
+            KeyAction.Undo to "Undo",
+            KeyAction.Redo to "Redo",
+            KeyAction.HideKeyboard to "HideKeyboard",
             KeyAction.DoNothing to "DoNothing"
         )
 
@@ -60,6 +64,18 @@ class KeyActionMapperSpecialActionTest {
         assertEquals(
             com.kazumaproject.core.R.drawable.keyboard_24px,
             KeyActionMapper.iconResIdForAction(KeyAction.MoveToCustomKeyboard("target"))
+        )
+        assertEquals(
+            com.kazumaproject.core.R.drawable.undo_24px,
+            KeyActionMapper.iconResIdForAction(KeyAction.Undo)
+        )
+        assertEquals(
+            com.kazumaproject.core.R.drawable.redo_24px,
+            KeyActionMapper.iconResIdForAction(KeyAction.Redo)
+        )
+        assertEquals(
+            com.kazumaproject.core.R.drawable.baseline_keyboard_arrow_down_24,
+            KeyActionMapper.iconResIdForAction(KeyAction.HideKeyboard)
         )
     }
 

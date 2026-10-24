@@ -29,3 +29,5 @@ app/liteStandard
 .cache/classified-distribution/
 
 tools/classified-dictionaries/__pycache__/
+.agents/
+.kotlin/

@@ -1966,4 +1966,22 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="gojuon_sizing_special_help">Cursor, delete, IME switch, small letters, Shift, undo and full-width toggle keys. Icon and text sizes can be adjusted separately.</string>
     <string name="gojuon_sizing_icon">Utility key icons</string>
     <string name="gojuon_sizing_special_text">Utility key text</string>
+
+    <string name="category_multi_touch_gestures_title">Multi-touch Gestures</string>
+    <string name="gesture_two_finger_swipe_left_title">Two-Finger Swipe Left</string>
+    <string name="gesture_two_finger_swipe_right_title">Two-Finger Swipe Right</string>
+    <string name="gesture_two_finger_swipe_up_title">Two-Finger Swipe Up</string>
+    <string name="gesture_two_finger_swipe_down_title">Two-Finger Swipe Down</string>
+    <string name="gesture_two_finger_pinch_in_title">Two-Finger Pinch In</string>
+    <string name="gesture_two_finger_pinch_out_title">Two-Finger Pinch Out</string>
+
+    <string name="multitouch_gesture_action_none">None</string>
+    <string name="multitouch_gesture_action_undo_commit">Undo Commit (Reconversion)</string>
+    <string name="multitouch_gesture_action_undo">Undo</string>
+    <string name="multitouch_gesture_action_redo">Redo</string>
+    <string name="multitouch_gesture_action_select_all">Select All</string>
+    <string name="multitouch_gesture_action_copy">Copy</string>
+    <string name="multitouch_gesture_action_cut">Cut</string>
+    <string name="multitouch_gesture_action_paste">Paste</string>
+    <string name="multitouch_gesture_action_hide_keyboard">Hide Keyboard</string>
 </resources>

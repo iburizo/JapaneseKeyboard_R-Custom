@@ -288,6 +288,11 @@ object AppModule {
                 finishComposing = {},
                 pushEditHistory = {}
             )
+            com.kazumaproject.markdownhelperkeyboard.ime_service.CursorSelectionGlobalBinder.bind(
+                toggleSelection = {},
+                endSelection = {},
+                isSelectionMode = { false }
+            )
         }
     }
 

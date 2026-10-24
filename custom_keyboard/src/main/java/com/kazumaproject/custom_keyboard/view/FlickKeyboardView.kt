@@ -217,6 +217,10 @@ class FlickKeyboardView @JvmOverloads constructor(
 
     private var iconScalePercent: Int = 100
     private var isCursorMode: Boolean = false
+    private fun updateCursorMode(enabled: Boolean) {
+        isCursorMode = enabled
+        com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = enabled
+    }
     private var cursorSwipeMoved: Boolean = false
     private var cursorPointerId: Int? = null
     private var longPressOwnerKeyData: KeyData? = null
@@ -320,7 +324,7 @@ class FlickKeyboardView @JvmOverloads constructor(
         cancelTextPreview()
         crossFlickControllers.forEach { it.dismissAllPopups() }
 
-        isCursorMode = true
+        updateCursorMode(true)
         cursorSwipeMoved = false
         cursorPointerId = pointerId
         longPressOwnerKeyData = keyData
@@ -660,7 +664,8 @@ class FlickKeyboardView @JvmOverloads constructor(
     }
 
     fun setCursorMode(enabled: Boolean) {
-        isCursorMode = enabled
+        val wasCursorMode = this.isCursorMode
+        updateCursorMode(enabled)
         if (enabled && independentMultiTouchForCurrentGesture) {
             val ownerView = dynamicKeyMap.values.firstOrNull { it.keyData == longPressOwnerKeyData }?.view
             val owner = motionTargets.entries.firstOrNull { it.value.view === ownerView } ?: motionTargets.entries.firstOrNull()
@@ -682,6 +687,9 @@ class FlickKeyboardView @JvmOverloads constructor(
             cursorPointerId = null
             cursorSwipeMoved = false
             longPressOwnerKeyData = null
+            if (wasCursorMode) {
+                (cursorSelectionEndListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler)?.invoke()
+            }
         }
     }
 
@@ -3195,6 +3203,8 @@ class FlickKeyboardView @JvmOverloads constructor(
     var onSelectionDeleteSwipeStartListener: (() -> Unit)? = null
     var onSelectionDeleteSwipeUpdateListener: ((Int, Int) -> Unit)? = null
     var onSelectionDeleteSwipeEndListener: (() -> Unit)? = null
+    var cursorSelectionToggleListener: (() -> Unit)? = null
+    var cursorSelectionEndListener: (() -> Unit)? = null
 
     private fun cancelInputControllers() {
         controllerRebindPending = true
@@ -3458,7 +3468,14 @@ class FlickKeyboardView @JvmOverloads constructor(
         if (isCursorMode) {
             val pIndex = cursorPointerId?.let(event::findPointerIndex) ?: 0
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                MotionEvent.ACTION_DOWN -> {
+                    return true
+                }
+
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (cursorPointerId != null && pointerId != cursorPointerId) {
+                        (cursorSelectionToggleListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler)?.invoke()
+                    }
                     return true
                 }
 
@@ -3615,7 +3632,7 @@ class FlickKeyboardView @JvmOverloads constructor(
 
                     if (isCursorSwipeEnabled && !hasComposingFlickOverride) {
                         if (isArrowCursorKey(keyData)) {
-                            isCursorMode = true
+                            updateCursorMode(true)
                             cursorSwipeMoved = false
                             cursorPointerId = pointerId
                             longPressOwnerKeyData = keyData
@@ -3833,6 +3850,13 @@ class FlickKeyboardView @JvmOverloads constructor(
                 cursorInitialX = event.displayX(index)
                 cursorInitialY = event.displayY(index)
             }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                val pointerId = event.getPointerId(event.actionIndex)
+                if (cursorPointerId != null && pointerId != cursorPointerId) {
+                    (cursorSelectionToggleListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler)?.invoke()
+                }
+                return true
+            }
             MotionEvent.ACTION_MOVE -> {
                 if (index < 0) return true
                 val x = event.displayX(index)
@@ -3910,7 +3934,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                         longPressOwnerKeyData = keyData
                         cursorInitialX = event.displayX(index)
                         cursorInitialY = event.displayY(index)
-                        isCursorMode = true
+                        updateCursorMode(true)
                     } else if (isNaKey(keyData)) {
                         scheduleCursorSwipeLongPress(
                             target = target,

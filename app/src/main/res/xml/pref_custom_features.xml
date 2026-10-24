@@ -21,6 +21,66 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:key="category_multi_touch_gestures"
+        android:title="@string/category_multi_touch_gestures_title">
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_swipe_left_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_swipe_left_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_swipe_left_title" />
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_swipe_right_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_swipe_right_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_swipe_right_title" />
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_swipe_up_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_swipe_up_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_swipe_up_title" />
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_swipe_down_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_swipe_down_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_swipe_down_title" />
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_pinch_in_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_pinch_in_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_pinch_in_title" />
+
+        <ListPreference
+            android:defaultValue="none"
+            android:dialogTitle="@string/gesture_two_finger_pinch_out_title"
+            android:entries="@array/multitouch_gesture_action_entries"
+            android:entryValues="@array/multitouch_gesture_action_values"
+            android:key="gesture_two_finger_pinch_out_preference"
+            android:summary="%s"
+            android:title="@string/gesture_two_finger_pinch_out_title" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="category_custom_flick"
         android:title="@string/category_custom_flick_title">
 

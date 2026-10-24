@@ -170,6 +170,18 @@ object KeyboardDefaultLayouts {
     var undoCommitHandler: (() -> Unit)? = null
     var commitDialNumbersHandler: (() -> Unit)? = null
 
+    var cursorSelectionToggleHandler: (() -> Unit)? = null
+    var cursorSelectionEndHandler: (() -> Unit)? = null
+    var isCursorSelectionModeProvider: (() -> Boolean)? = null
+    var isCursorModeActive: Boolean = false
+
+    fun resetCursorSelectionHandlers() {
+        cursorSelectionToggleHandler = null
+        cursorSelectionEndHandler = null
+        isCursorSelectionModeProvider = null
+        isCursorModeActive = false
+    }
+
     fun createFinalLayout(
         mode: KeyboardInputMode,
         dynamicKeyStates: Map<String, Int>,

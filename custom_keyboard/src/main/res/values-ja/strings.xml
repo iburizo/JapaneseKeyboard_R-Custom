@@ -46,4 +46,7 @@
     <string name="voice_input">音声入力</string>
     <string name="action_switch_romaji_english">ローマ字、英語切り替え</string>
     <string name="action_switch_to_hiragana_mode">ひらがなモードに切り替え</string>
+    <string name="action_undo">元に戻す (Undo)</string>
+    <string name="action_redo">やり直し (Redo)</string>
+    <string name="action_hide_keyboard">キーボードを閉じる</string>
 </resources>

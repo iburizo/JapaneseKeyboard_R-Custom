@@ -1964,4 +1964,22 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="gojuon_sizing_special_help">カーソル、削除、IME切替、小文字、シフト、元に戻す、全角切替などのキーです。アイコンと文字のサイズを個別に調整できます。</string>
     <string name="gojuon_sizing_icon">特殊キーのアイコン</string>
     <string name="gojuon_sizing_special_text">特殊キーの文字</string>
+
+    <string name="category_multi_touch_gestures_title">マルチタッチジェスチャ</string>
+    <string name="gesture_two_finger_swipe_left_title">2本指スワイプ（左）</string>
+    <string name="gesture_two_finger_swipe_right_title">2本指スワイプ（右）</string>
+    <string name="gesture_two_finger_swipe_up_title">2本指スワイプ（上）</string>
+    <string name="gesture_two_finger_swipe_down_title">2本指スワイプ（下）</string>
+    <string name="gesture_two_finger_pinch_in_title">2本指ピンチイン（縮小）</string>
+    <string name="gesture_two_finger_pinch_out_title">2本指ピンチアウト（拡大）</string>
+
+    <string name="multitouch_gesture_action_none">なし</string>
+    <string name="multitouch_gesture_action_undo_commit">確定戻し</string>
+    <string name="multitouch_gesture_action_undo">元に戻す (Undo)</string>
+    <string name="multitouch_gesture_action_redo">やり直し (Redo)</string>
+    <string name="multitouch_gesture_action_select_all">全選択</string>
+    <string name="multitouch_gesture_action_copy">コピー</string>
+    <string name="multitouch_gesture_action_cut">切り取り</string>
+    <string name="multitouch_gesture_action_paste">貼り付け</string>
+    <string name="multitouch_gesture_action_hide_keyboard">キーボードを閉じる</string>
 </resources>

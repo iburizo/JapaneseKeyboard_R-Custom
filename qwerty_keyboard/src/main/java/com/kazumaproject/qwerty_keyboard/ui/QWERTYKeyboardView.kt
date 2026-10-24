@@ -149,6 +149,8 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     var onSelectionDeleteSwipeStartHandler: (() -> Unit)? = null
     var onSelectionDeleteSwipeUpdateHandler: ((Int, Int) -> Unit)? = null
     var onSelectionDeleteSwipeEndHandler: (() -> Unit)? = null
+    var cursorSelectionToggleHandler: (() -> Unit)? = null
+    var cursorSelectionEndHandler: (() -> Unit)? = null
     private var isCursorSwipeActive = false
     private var isDeleteSwipeActive = false
     private var swipePointerId = -1
@@ -214,6 +216,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
         if (independentMultiTouchForCurrentGesture) pointerId in independentlyLockedPointers
         else pointerId == lockedPointerId
 
+    var onCursorModeChangedListener: ((Boolean) -> Unit)? = null
     private var isCursorMode: Boolean = false
 
     // カーソルモード中のタッチの初期位置を記録する変数
@@ -1571,6 +1574,14 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
         if (isCursorMode) {
             when (event.actionMasked) {
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    val pointerId = event.getPointerId(event.actionIndex)
+                    if (cursorPointerId != null && pointerId != cursorPointerId) {
+                        cursorSelectionToggleHandler?.invoke()
+                    }
+                    return true
+                }
+
                 MotionEvent.ACTION_MOVE -> {
                     val threshold = 20f
                     val index = cursorPointerId?.let(event::findPointerIndex) ?: 0
@@ -3195,7 +3206,9 @@ class QWERTYKeyboardView @JvmOverloads constructor(
     }
 
     fun setCursorMode(enabled: Boolean) {
+        val wasCursorMode = this.isCursorMode
         isCursorMode = enabled
+        onCursorModeChangedListener?.invoke(enabled)
         if (enabled) {
             cursorPointerId = (0 until pointerButtonMap.size()).map { pointerButtonMap.keyAt(it) }
                 .firstOrNull { pointerButtonMap[it]?.id == binding.keySpace.id }
@@ -3217,6 +3230,9 @@ class QWERTYKeyboardView @JvmOverloads constructor(
             setKeysForCursorMoveMode()
         } else {
             cursorPointerId = null
+            if (wasCursorMode) {
+                cursorSelectionEndHandler?.invoke()
+            }
             applyContentForMode(qwertyMode.value)
             if (_romajiModeState.value) {
                 binding.keySpace.text =

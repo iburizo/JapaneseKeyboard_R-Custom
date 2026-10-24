@@ -57,6 +57,21 @@ object KeyActionMapper {
                 com.kazumaproject.core.R.drawable.input_mode_number_select_custom
             ),
             DisplayAction(
+                KeyAction.Undo,
+                context.getString(R.string.action_undo),
+                com.kazumaproject.core.R.drawable.undo_24px
+            ),
+            DisplayAction(
+                KeyAction.Redo,
+                context.getString(R.string.action_redo),
+                com.kazumaproject.core.R.drawable.redo_24px
+            ),
+            DisplayAction(
+                KeyAction.HideKeyboard,
+                context.getString(R.string.action_hide_keyboard),
+                com.kazumaproject.core.R.drawable.baseline_keyboard_arrow_down_24
+            ),
+            DisplayAction(
                 KeyAction.Space,
                 context.getString(R.string.action_space),
                 com.kazumaproject.core.R.drawable.baseline_space_bar_24
@@ -255,6 +270,9 @@ object KeyActionMapper {
             KeyAction.VoiceInput -> com.kazumaproject.core.R.drawable.settings_voice_24px
             KeyAction.UndoCommit -> com.kazumaproject.core.R.drawable.undo_24px
             KeyAction.CommitDialNumbers -> com.kazumaproject.core.R.drawable.input_mode_number_select_custom
+            KeyAction.Undo -> com.kazumaproject.core.R.drawable.undo_24px
+            KeyAction.Redo -> com.kazumaproject.core.R.drawable.redo_24px
+            KeyAction.HideKeyboard -> com.kazumaproject.core.R.drawable.baseline_keyboard_arrow_down_24
             is KeyAction.Text -> if (action.text == "っ") com.kazumaproject.core.R.drawable.sokuon_icon else null
             else -> null
         }
@@ -313,6 +331,9 @@ object KeyActionMapper {
             is KeyAction.ForceFullWidthSpace -> "ForceFullWidthSpace"
             is KeyAction.UndoCommit -> "UndoCommit"
             is KeyAction.CommitDialNumbers -> "CommitDialNumbers"
+            is KeyAction.Undo -> "Undo"
+            is KeyAction.Redo -> "Redo"
+            is KeyAction.HideKeyboard -> "HideKeyboard"
             else -> null
         }
     }
@@ -375,6 +396,9 @@ object KeyActionMapper {
             "ForceFullWidthSpace" -> KeyAction.ForceFullWidthSpace
             "UndoCommit" -> KeyAction.UndoCommit
             "CommitDialNumbers" -> KeyAction.CommitDialNumbers
+            "Undo" -> KeyAction.Undo
+            "Redo" -> KeyAction.Redo
+            "HideKeyboard" -> KeyAction.HideKeyboard
             else -> null
         }
     }

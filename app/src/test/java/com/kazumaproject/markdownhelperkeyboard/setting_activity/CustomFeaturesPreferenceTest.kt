@@ -47,6 +47,12 @@ class CustomFeaturesPreferenceTest {
         assertTrue(keys.contains("hierarchical_flick_angle_margin_preference"))
         assertTrue(keys.contains("circular_slot_action_setting_preference"))
         assertTrue(keys.contains("sumire_special_key_editor_preference"))
+        assertTrue(keys.contains("gesture_two_finger_swipe_left_preference"))
+        assertTrue(keys.contains("gesture_two_finger_swipe_right_preference"))
+        assertTrue(keys.contains("gesture_two_finger_swipe_up_preference"))
+        assertTrue(keys.contains("gesture_two_finger_swipe_down_preference"))
+        assertTrue(keys.contains("gesture_two_finger_pinch_in_preference"))
+        assertTrue(keys.contains("gesture_two_finger_pinch_out_preference"))
     }
 
     @Test

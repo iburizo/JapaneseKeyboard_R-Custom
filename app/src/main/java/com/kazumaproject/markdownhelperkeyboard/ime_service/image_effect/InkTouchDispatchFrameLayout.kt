@@ -5,6 +5,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import com.kazumaproject.custom_keyboard.data.KeyAction
+import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureDetector
+import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureType
+import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.OnMultiTouchGestureListener
 import timber.log.Timber
 
 class InkTouchDispatchFrameLayout @JvmOverloads constructor(
@@ -51,6 +55,25 @@ class InkTouchDispatchFrameLayout @JvmOverloads constructor(
 
     var suppressTouchEffectMotionEvents: Boolean = false
 
+    val multiTouchGestureDetector by lazy {
+        MultiTouchGestureDetector(context).apply {
+            isCursorModeProvider = {
+                this@InkTouchDispatchFrameLayout.isCursorModeProvider?.invoke()
+                    ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive
+            }
+        }
+    }
+
+    var onMultiTouchGestureListener: ((MultiTouchGestureType, KeyAction) -> Unit)? = null
+    var isCursorModeProvider: (() -> Boolean)? = null
+    private var isGestureActive = false
+
+    init {
+        multiTouchGestureDetector.listener = OnMultiTouchGestureListener { type, action ->
+            onMultiTouchGestureListener?.invoke(type, action)
+        }
+    }
+
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (!suppressTouchEffectMotionEvents) {
             runCatching {
@@ -58,6 +81,31 @@ class InkTouchDispatchFrameLayout @JvmOverloads constructor(
             }.onFailure {
                 Timber.w(it, "Keyboard touch effect forwarding failed.")
             }
+        }
+
+        val actionMasked = ev.actionMasked
+
+        if (actionMasked == MotionEvent.ACTION_DOWN) {
+            isGestureActive = false
+        }
+
+        // すでにジェスチャ認識済みのセッションは子ビューに流さず親で消費
+        if (isGestureActive) {
+            multiTouchGestureDetector.onTouchEvent(ev)
+            if (actionMasked == MotionEvent.ACTION_UP || actionMasked == MotionEvent.ACTION_CANCEL) {
+                isGestureActive = false
+            }
+            return true
+        }
+
+        // ジェスチャ検出器の評価
+        val gestureRecognized = multiTouchGestureDetector.onTouchEvent(ev)
+        if (gestureRecognized) {
+            isGestureActive = true
+            // 子ビューへ直ちに ACTION_CANCEL を発行して誤入力を防ぐ
+            cancelChildTouches(ev)
+            clearFallbackTarget()
+            return true
         }
 
         fallbackTouchTarget?.let { target ->
@@ -194,5 +242,23 @@ class InkTouchDispatchFrameLayout @JvmOverloads constructor(
         fallbackTouchTarget = null
         fallbackTargetScreenX = 0
         fallbackTargetScreenY = 0
+    }
+
+    private fun cancelChildTouches(source: MotionEvent) {
+        val cancel = MotionEvent.obtain(
+            source.downTime,
+            source.eventTime,
+            MotionEvent.ACTION_CANCEL,
+            source.x,
+            source.y,
+            source.metaState
+        )
+        try {
+            super.dispatchTouchEvent(cancel)
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to cancel child touches upon gesture recognition")
+        } finally {
+            cancel.recycle()
+        }
     }
 }
