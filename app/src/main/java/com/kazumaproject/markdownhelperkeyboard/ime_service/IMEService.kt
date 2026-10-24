@@ -25628,8 +25628,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         clearZeroQueryAllState(refresh = false)
         val entry = pendingReconversionEntry ?: return
         val mainView = mainLayoutBinding ?: return
-        if (!pendingReconversionValid) {
-            clearPendingReconversionEntry()
+        if (inputString.value.isNotEmpty() || stringInTail.get().isNotEmpty() || isHenkan.get()) {
             return
         }
 
@@ -25638,6 +25637,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         beginBatchEdit()
         try {
             if (!deleteCommittedTextBeforeCursor(entry.committedText)) {
+                clearPendingReconversionEntry()
                 return
             }
             restoreReadingToPreEdit(entry.reading, mainView)
@@ -29110,11 +29110,20 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     }
 
     private fun finishInputEnterKey() {
+        val committedText = inputString.value + stringInTail.get()
         clearZeroQueryAllState(refresh = false)
         _inputString.update { "" }
         finishComposingText()
         clearSuggestionStateAfterCommit()
+        if (committedText.isNotEmpty()) {
+            rememberCommittedTextForReconversion(
+                reading = committedText,
+                committedText = committedText
+            )
+            rememberZeroQueryKeyAfterCommit(committedText)
+        }
         resetFlagsEnterKeyNotHenkan()
+        consumePendingZeroQueryAfterCommit()
     }
 
     /**
