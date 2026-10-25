@@ -1976,6 +1976,7 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="gesture_two_finger_pinch_out_title">Two-Finger Pinch Out</string>
 
     <string name="multitouch_gesture_action_none">None</string>
+    <string name="multitouch_gesture_action_enter">Enter (Confirm / Newline)</string>
     <string name="multitouch_gesture_action_undo_commit">Undo Commit (Reconversion)</string>
     <string name="multitouch_gesture_action_undo">Undo</string>
     <string name="multitouch_gesture_action_redo">Redo</string>
@@ -1984,4 +1985,6 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="multitouch_gesture_action_cut">Cut</string>
     <string name="multitouch_gesture_action_paste">Paste</string>
     <string name="multitouch_gesture_action_hide_keyboard">Hide Keyboard</string>
+    <string name="multitouch_gesture_action_space">Space</string>
+    <string name="multitouch_gesture_action_delete">Delete</string>
 </resources>

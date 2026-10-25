@@ -329,4 +329,48 @@ class MultiTouchRollbackAdversarialStressTest {
         editor.setComposingText("かき", 2)
         assertEquals("かき", editor.content.toString())
     }
+
+    @Test
+    fun testMultiTouchGesture_DispatchesEnterKeyAction() {
+        // Test parsing Enter action from preference string
+        val enterAction = ReflectionHelpers.callInstanceMethod<KeyAction>(
+            service,
+            "parseGestureAction",
+            ClassParameter.from(String::class.java, "Enter")
+        )
+        assertEquals(KeyAction.Enter, enterAction)
+
+        val legacyEnterAction = ReflectionHelpers.callInstanceMethod<KeyAction>(
+            service,
+            "parseGestureAction",
+            ClassParameter.from(String::class.java, "enter")
+        )
+        assertEquals(KeyAction.Enter, legacyEnterAction)
+
+        // Verify dispatch to keyboard listener
+        var dispatchedAction: KeyAction? = null
+        val mockListener = object : com.kazumaproject.custom_keyboard.view.FlickKeyboardView.OnKeyboardActionListener {
+            override fun onPress(action: KeyAction) {}
+            override fun onAction(action: KeyAction, isFlick: Boolean) {
+                dispatchedAction = action
+            }
+            override fun onActionLongPress(action: KeyAction) {}
+            override fun onActionUpAfterLongPress(action: KeyAction) {}
+            override fun onFlickDirectionChanged(direction: com.kazumaproject.custom_keyboard.data.FlickDirection) {}
+            override fun onFlickActionLongPress(action: KeyAction) {}
+            override fun onFlickActionUpAfterLongPress(action: KeyAction, isFlick: Boolean) {}
+            override fun onLongPressActionCanceled(action: KeyAction) {}
+        }
+        ReflectionHelpers.setField(service, "currentFlickKeyboardActionListener", mockListener)
+
+        service.captureMultiTouchSnapshot()
+        ReflectionHelpers.callInstanceMethod<Unit>(
+            service,
+            "handleMultiTouchGesture",
+            ClassParameter.from(MultiTouchGestureType::class.java, MultiTouchGestureType.SWIPE_DOWN),
+            ClassParameter.from(KeyAction::class.java, KeyAction.Enter)
+        )
+
+        assertEquals("Enter action must be dispatched to keyboard listener", KeyAction.Enter, dispatchedAction)
+    }
 }

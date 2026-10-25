@@ -15207,7 +15207,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         )
         if (qwertyMode.value == TenKeyQWERTYMode.Sumire) applySumireModeSizing(flickView)
 
-        flickView.setOnKeyboardActionListener(object :
+        val keyboardActionListener = object :
             com.kazumaproject.custom_keyboard.view.FlickKeyboardView.OnKeyboardActionListener {
 
             override fun onPress(action: KeyAction) {
@@ -16557,7 +16557,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     }
                 }
             }
-        })
+        }
+        currentFlickKeyboardActionListener = keyboardActionListener
+        flickView.setOnKeyboardActionListener(keyboardActionListener)
     }
 
     private fun handleCustomKeyboardShiftTap() {
@@ -26026,6 +26028,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     )
 
     private var multiTouchSnapshot: MultiTouchInputSnapshot? = null
+    private var currentFlickKeyboardActionListener: com.kazumaproject.custom_keyboard.view.FlickKeyboardView.OnKeyboardActionListener? = null
 
     fun captureMultiTouchSnapshot() {
         multiTouchSnapshot = MultiTouchInputSnapshot(
@@ -26098,17 +26101,34 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
     private fun handleMultiTouchGesture(type: MultiTouchGestureType, action: KeyAction) {
         rollbackPrematureInput()
+        if (action is KeyAction.DoNothing) return
         vibrate()
-        when (action) {
-            is KeyAction.UndoCommit -> performPendingReconversion()
-            is KeyAction.Undo -> undoLastHistoryEntry()
-            is KeyAction.Redo -> redoLastHistoryEntry()
-            is KeyAction.SelectAll -> selectAllText()
-            is KeyAction.Copy -> copyAction()
-            is KeyAction.Cut -> cutAction()
-            is KeyAction.Paste -> pasteAction()
-            is KeyAction.HideKeyboard -> requestHideSelf(0)
-            else -> Unit
+        val listener = currentFlickKeyboardActionListener
+        if (listener != null) {
+            listener.onAction(action, isFlick = false)
+        } else {
+            when (action) {
+                is KeyAction.UndoCommit -> performPendingReconversion()
+                is KeyAction.Undo -> undoLastHistoryEntry()
+                is KeyAction.Redo -> redoLastHistoryEntry()
+                is KeyAction.SelectAll -> selectAllText()
+                is KeyAction.Copy -> copyAction()
+                is KeyAction.Cut -> cutAction()
+                is KeyAction.Paste -> pasteAction()
+                is KeyAction.HideKeyboard -> requestHideSelf(0)
+                is KeyAction.Enter, is KeyAction.NewLine, is KeyAction.Confirm -> {
+                    mainLayoutBinding?.let { binding ->
+                        val insertString = inputString.value
+                        val suggestions = suggestionAdapter?.suggestions ?: emptyList()
+                        if (insertString.isNotEmpty()) {
+                            handleNonEmptyInputEnterKey(suggestions, binding, insertString)
+                        } else {
+                            handleEmptyInputEnterKey(binding)
+                        }
+                    }
+                }
+                else -> Unit
+            }
         }
     }
 
@@ -26124,6 +26144,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     }
 
     private fun parseGestureAction(value: String?): KeyAction {
+        if (value.isNullOrBlank() || value == "none") return KeyAction.DoNothing
         return when (value) {
             "undo_commit" -> KeyAction.UndoCommit
             "undo" -> KeyAction.Undo
@@ -26133,7 +26154,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             "cut" -> KeyAction.Cut
             "paste" -> KeyAction.Paste
             "hide_keyboard" -> KeyAction.HideKeyboard
-            else -> KeyAction.DoNothing
+            "enter" -> KeyAction.Enter
+            "space" -> KeyAction.Space
+            else -> KeyActionMapper.toKeyAction(value) ?: KeyAction.DoNothing
         }
     }
 

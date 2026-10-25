@@ -1974,6 +1974,7 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="gesture_two_finger_pinch_out_title">2本指ピンチアウト（拡大）</string>
 
     <string name="multitouch_gesture_action_none">なし</string>
+    <string name="multitouch_gesture_action_enter">エンター (確定・改行)</string>
     <string name="multitouch_gesture_action_undo_commit">確定戻し</string>
     <string name="multitouch_gesture_action_undo">元に戻す (Undo)</string>
     <string name="multitouch_gesture_action_redo">やり直し (Redo)</string>
@@ -1982,4 +1983,6 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="multitouch_gesture_action_cut">切り取り</string>
     <string name="multitouch_gesture_action_paste">貼り付け</string>
     <string name="multitouch_gesture_action_hide_keyboard">キーボードを閉じる</string>
+    <string name="multitouch_gesture_action_space">空白 (Space)</string>
+    <string name="multitouch_gesture_action_delete">削除 (Delete)</string>
 </resources>

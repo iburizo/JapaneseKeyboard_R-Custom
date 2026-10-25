@@ -330,6 +330,7 @@
 
     <string-array name="multitouch_gesture_action_entries">
         <item>@string/multitouch_gesture_action_none</item>
+        <item>@string/multitouch_gesture_action_enter</item>
         <item>@string/multitouch_gesture_action_undo_commit</item>
         <item>@string/multitouch_gesture_action_undo</item>
         <item>@string/multitouch_gesture_action_redo</item>
@@ -338,17 +339,22 @@
         <item>@string/multitouch_gesture_action_cut</item>
         <item>@string/multitouch_gesture_action_paste</item>
         <item>@string/multitouch_gesture_action_hide_keyboard</item>
+        <item>@string/multitouch_gesture_action_space</item>
+        <item>@string/multitouch_gesture_action_delete</item>
     </string-array>
 
     <string-array name="multitouch_gesture_action_values">
         <item>none</item>
-        <item>undo_commit</item>
-        <item>undo</item>
-        <item>redo</item>
-        <item>select_all</item>
-        <item>copy</item>
-        <item>cut</item>
-        <item>paste</item>
-        <item>hide_keyboard</item>
+        <item>Enter</item>
+        <item>UndoCommit</item>
+        <item>Undo</item>
+        <item>Redo</item>
+        <item>SelectAll</item>
+        <item>Copy</item>
+        <item>Cut</item>
+        <item>Paste</item>
+        <item>HideKeyboard</item>
+        <item>Space</item>
+        <item>Delete</item>
     </string-array>
 </resources>
