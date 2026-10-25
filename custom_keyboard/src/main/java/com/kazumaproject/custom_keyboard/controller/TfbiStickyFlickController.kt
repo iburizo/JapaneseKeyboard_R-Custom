@@ -155,6 +155,10 @@ class TfbiStickyFlickController(
         guidePopupHost.applyPopupViewStyle(popupStyle)
     }
 
+    fun dismiss() {
+        resetState()
+    }
+
     fun cancel() {
         resetState()
         attachedView?.setOnTouchListener(null)

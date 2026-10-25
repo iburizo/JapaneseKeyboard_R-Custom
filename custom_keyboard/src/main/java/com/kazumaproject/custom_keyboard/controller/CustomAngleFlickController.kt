@@ -368,6 +368,10 @@ class CustomAngleFlickController(
         return windowAnchor.windowToken != null
     }
 
+    fun dismissPopup() {
+        hidePopup()
+    }
+
     private fun hidePopup() {
         if (popupWindow.isShowing) popupWindow.dismiss()
         anchorView = null

@@ -120,6 +120,11 @@ class FlickLongPressInputController(
         view.setOnTouchListener { _, event -> handleTouchEvent(event) }
     }
 
+    fun dismiss() {
+        clearLongPressCallback()
+        resetState()
+    }
+
     fun cancel() {
         clearLongPressCallback()
         resetState()

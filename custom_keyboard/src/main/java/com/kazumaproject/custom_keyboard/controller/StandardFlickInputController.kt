@@ -276,7 +276,7 @@ class StandardFlickInputController(
         popupDirection to inputTextTransform(value)
     }.toMap()
 
-    private fun dismissPopup(animateSkinRelease: Boolean = false) {
+    fun dismissPopup(animateSkinRelease: Boolean = false) {
         if (popupWindow.isShowing) {
             popupWindow.dismiss()
         }

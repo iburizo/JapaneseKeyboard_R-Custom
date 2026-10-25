@@ -3173,6 +3173,13 @@ class QWERTYKeyboardView @JvmOverloads constructor(
         this.variationPopup = popup
     }
 
+    fun dismissAllPopups() {
+        dismissKeyPreview(defer = false)
+        dismissVariationPopup(defer = false)
+        cancelIndependentTouchesForLayoutChange()
+        postInvalidate()
+    }
+
     private fun dismissVariationPopup(defer: Boolean = false) {
         val popup = variationPopup
         variationPopup = null

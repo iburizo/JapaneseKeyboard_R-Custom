@@ -229,6 +229,10 @@ class TfbiHierarchicalFlickController(
         }
     }
 
+    fun dismiss() {
+        resetState()
+    }
+
     /**
      * コントローラーを View からデタッチし、リソースを解放します。
      */

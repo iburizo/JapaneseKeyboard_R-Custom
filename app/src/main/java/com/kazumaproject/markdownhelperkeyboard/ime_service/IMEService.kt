@@ -26049,9 +26049,16 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                 snapshot.directCommittedTextCount = 0
             }
 
-            // 2. フリックプレビューのキャンセル
+            // 2. フリックプレビューおよび表示中ポップアップ（チューリップ型ガイド等）の消去
             runCatching {
                 flickInputPreviewCoordinator.cancel(restore = false)
+            }
+            runCatching {
+                getActiveKeyboardSurface()?.let { surface ->
+                    surface.keyboardView?.dismissAllPopups()
+                    surface.customLayout?.dismissAllPopups()
+                    surface.qwertyView?.dismissAllPopups()
+                }
             }
 
             // 3. Composing State の復元 / 破棄

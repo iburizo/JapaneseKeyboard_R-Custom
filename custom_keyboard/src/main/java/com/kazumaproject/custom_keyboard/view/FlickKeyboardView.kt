@@ -3347,7 +3347,29 @@ class FlickKeyboardView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * 表示中のすべてのフリックガイド・ポップアップ（チューリップ型クロスフリック等）およびタッチ追跡状態を消去する。
+     */
+    fun dismissAllPopups() {
+        dismissControllerPopups()
+        cancelTrackedTouchState()
+        postInvalidate()
+    }
+
+    private fun dismissControllerPopups() {
+        cancelTextPreview()
+        crossFlickControllers.forEach { runCatching { it.dismissAllPopups(clearDirectionalCache = true) } }
+        standardFlickControllers.forEach { runCatching { it.dismissPopup() } }
+        flickControllers.forEach { runCatching { it.dismissPopup() } }
+        centerGuideFlickControllers.forEach { runCatching { it.dismiss() } }
+        tfbiControllers.forEach { runCatching { it.dismiss() } }
+        stickyTfbiControllers.forEach { runCatching { it.dismiss() } }
+        hierarchicalTfbiControllers.forEach { runCatching { it.dismiss() } }
+        flickLongPressControllers.forEach { runCatching { it.dismiss() } }
+    }
+
     private fun cancelTrackedTouchState() {
+        dismissControllerPopups()
         cancelPendingCursorSwipe()
         independentLastCoordinates.clear()
         independentTextPreviews.clear()

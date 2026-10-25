@@ -5,7 +5,9 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import android.view.ViewGroup
 import com.kazumaproject.custom_keyboard.data.KeyAction
+import com.kazumaproject.custom_keyboard.view.FlickKeyboardView
 import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureDetector
 import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.MultiTouchGestureType
 import com.kazumaproject.markdownhelperkeyboard.ime_service.gesture.OnMultiTouchGestureListener
@@ -263,6 +265,17 @@ class InkTouchDispatchFrameLayout @JvmOverloads constructor(
             Timber.w(e, "Failed to cancel child touches upon gesture recognition")
         } finally {
             cancel.recycle()
+        }
+        dismissKeyboardPopupsRecursively(this)
+    }
+
+    private fun dismissKeyboardPopupsRecursively(view: View) {
+        if (view is FlickKeyboardView) {
+            view.dismissAllPopups()
+        } else if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                dismissKeyboardPopupsRecursively(view.getChildAt(i))
+            }
         }
     }
 }

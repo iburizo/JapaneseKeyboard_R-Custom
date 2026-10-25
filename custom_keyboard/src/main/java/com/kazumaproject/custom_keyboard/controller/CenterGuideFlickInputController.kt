@@ -111,6 +111,10 @@ class CenterGuideFlickInputController(
         }
     }
 
+    fun dismiss() {
+        popupHost.dismiss()
+    }
+
     fun cancel() {
         listener?.onCanceled()
         activeGestureConfig = null

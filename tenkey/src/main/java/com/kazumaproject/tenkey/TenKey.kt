@@ -2006,6 +2006,11 @@ class TenKey(context: Context, attributeSet: AttributeSet) :
         sessions.forEach { session -> (getButtonFromKey(session.key) as? View)?.isPressed = true }
     }
 
+    fun dismissAllPopups() {
+        cancelActiveTouch(KeyTouchCancelReason.PointerInterrupted)
+        postInvalidate()
+    }
+
     private fun cancelActiveTouch(reason: KeyTouchCancelReason) {
         if (independentMultiTouchForCurrentGesture) {
             independentTouches.cancelAll(reason)

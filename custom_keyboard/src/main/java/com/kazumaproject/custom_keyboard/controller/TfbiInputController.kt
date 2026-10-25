@@ -186,6 +186,10 @@ class TfbiInputController(
         view.setOnTouchListener { _, event -> handleTouchEvent(event) }
     }
 
+    fun dismiss() {
+        resetState()
+    }
+
     fun cancel() {
         listener?.onCanceled()
         activeGestureConfig = null
