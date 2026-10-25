@@ -284,4 +284,8 @@
     <string name="enable_direct_input_mode">直接入力モード</string>
     <string name="cursor_left">カーソルを左に移動</string>
     <string name="cursor_right">カーソルを右に移動</string>
+
+    <!-- Cursor Mode Range Selection Guide -->
+    <string name="cursor_guide_tap_to_select">タップで範囲選択</string>
+    <string name="cursor_guide_selecting_range">範囲選択中</string>
 </resources>

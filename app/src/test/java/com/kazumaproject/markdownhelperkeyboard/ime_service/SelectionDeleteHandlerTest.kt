@@ -119,4 +119,51 @@ class SelectionDeleteHandlerTest {
         assertEquals(1, deletedTexts.size)
         assertEquals(text, deletedTexts[0])
     }
+
+    @Test
+    fun testSwipeUpPreservesColumnPositionInMidLine() {
+        // Line lengths: line 1 = 10, line 2 = 10
+        val text = "0123456789\nabcdefghij"
+        // Cursor at column 4 of line 2 (index 15)
+        val anchor = 15
+        setupText(text, anchor)
+        handler.onSwipeStart()
+
+        // Swipe up 1 line: should move to column 4 of line 1 (index 4), NOT line 1 end (10) or text start (0)
+        handler.onSwipeUpdate(deltaCharsX = 0, deltaCharsY = -1)
+        verify(mockInputConnection).setSelection(4, anchor)
+    }
+
+    @Test
+    fun testSwipeUpDownPreservesDesiredColumnAcrossShorterLine() {
+        // Line 1: length 10 ("0123456789")
+        // Line 2: length 3  ("ABC")
+        // Line 3: length 10 ("abcdefghij")
+        val text = "0123456789\nABC\nabcdefghij"
+        // Cursor at column 8 of line 3 (start=15, anchor = 15 + 8 = 23)
+        val anchor = 23
+        setupText(text, anchor)
+        handler.onSwipeStart()
+
+        // Swipe up 1 line (to Line 2): Line 2 length is 3, so clamped to column 3 (index 11 + 3 = 14)
+        handler.onSwipeUpdate(deltaCharsX = 0, deltaCharsY = -1)
+        verify(mockInputConnection).setSelection(14, anchor)
+
+        // Swipe up 2 lines (to Line 1): Line 1 length is 10, desiredColumn (8) is restored! (index 0 + 8 = 8)
+        handler.onSwipeUpdate(deltaCharsX = 0, deltaCharsY = -2)
+        verify(mockInputConnection).setSelection(8, anchor)
+    }
+
+    @Test
+    fun testSwipeDownMovesToMatchingColumnOnNextLine() {
+        val text = "0123456789\nabcdefghij"
+        // Cursor at column 5 of line 1 (index 5)
+        val anchor = 5
+        setupText(text, anchor)
+        handler.onSwipeStart()
+
+        // Swipe down 1 line: should move to column 5 of line 2 (index 11 + 5 = 16), NOT line 2 start (11)
+        handler.onSwipeUpdate(deltaCharsX = 0, deltaCharsY = 1)
+        verify(mockInputConnection).setSelection(16, anchor)
+    }
 }

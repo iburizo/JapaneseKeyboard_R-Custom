@@ -3,6 +3,7 @@ package com.kazumaproject.custom_keyboard.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Rect
@@ -36,6 +37,7 @@ import androidx.core.graphics.ColorUtils
 import com.google.android.material.R
 import com.kazumaproject.core.domain.skin.KeyboardSkinId
 import com.kazumaproject.core.ui.skin.KeyboardSkinRegistry
+import com.kazumaproject.core.ui.cursor.CursorGuideOverlayRenderer
 import com.kazumaproject.core.ui.font.KeyboardFontAware
 import com.kazumaproject.core.ui.font.KeyboardFontApplicator
 import com.kazumaproject.core.ui.font.KeyboardFontGlyphDrawable
@@ -220,6 +222,16 @@ class FlickKeyboardView @JvmOverloads constructor(
     private fun updateCursorMode(enabled: Boolean) {
         isCursorMode = enabled
         com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = enabled
+    }
+    private val cursorGuideOverlayRenderer = CursorGuideOverlayRenderer(context)
+    var cursorSelectionModeProvider: (() -> Boolean)? = null
+
+    fun isCursorGuideOverlayVisible(): Boolean = isCursorMode
+
+    fun isCursorSelectionActive(): Boolean {
+        return cursorSelectionModeProvider?.invoke()
+            ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorSelectionModeProvider?.invoke()
+            ?: false
     }
     private var cursorSwipeMoved: Boolean = false
     private var cursorPointerId: Int? = null
@@ -774,6 +786,18 @@ class FlickKeyboardView @JvmOverloads constructor(
                 (cursorSelectionEndListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler)?.invoke()
             }
         }
+        invalidate()
+    }
+
+    override fun dispatchDraw(canvas: Canvas) {
+        super.dispatchDraw(canvas)
+        cursorGuideOverlayRenderer.drawOverlay(
+            canvas = canvas,
+            width = width,
+            height = height,
+            isCursorMode = isCursorMode,
+            isSelectionMode = isCursorSelectionActive()
+        )
     }
 
     fun setAngleAndRange(
@@ -3558,6 +3582,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     if (cursorPointerId != null && pointerId != cursorPointerId) {
                         (cursorSelectionToggleListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler)?.invoke()
+                        invalidate()
                     }
                     return true
                 }
@@ -3972,6 +3997,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                 val pointerId = event.getPointerId(event.actionIndex)
                 if (cursorPointerId != null && pointerId != cursorPointerId) {
                     (cursorSelectionToggleListener ?: com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler)?.invoke()
+                    invalidate()
                 }
                 return true
             }

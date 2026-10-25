@@ -8231,6 +8231,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             binding.root.onMultiTouchGestureListener = { type, action ->
                 handleMultiTouchGesture(type, action)
             }
+            binding.root.onMultiTouchSessionStartListener = {
+                captureMultiTouchSnapshot()
+            }
             binding.root.multiTouchGestureDetector.settings = loadMultiTouchGestureSettings()
             binding.keyboardView.onCursorModeChangedListener = {
                 com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = it
@@ -8272,6 +8275,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         floatingKeyboardBinding?.let { floatingKeyboardLayoutBinding ->
             floatingKeyboardLayoutBinding.root.onMultiTouchGestureListener = { type, action ->
                 handleMultiTouchGesture(type, action)
+            }
+            floatingKeyboardLayoutBinding.root.onMultiTouchSessionStartListener = {
+                captureMultiTouchSnapshot()
             }
             floatingKeyboardLayoutBinding.root.multiTouchGestureDetector.settings = loadMultiTouchGestureSettings()
             floatingKeyboardLayoutBinding.keyboardViewFloating.onCursorModeChangedListener = {
@@ -15124,6 +15130,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         isFloatingView: Boolean
     ) {
         flickView.isComposingActiveProvider = { inputString.value.isNotEmpty() }
+        flickView.cursorSelectionModeProvider = { cursorSelectionMode }
         SelectionDeleteGlobalBinder.bind(
             inputConnectionProvider = { currentInputConnection },
             isComposingActive = { inputString.value.isNotEmpty() },
@@ -24537,6 +24544,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             onSelectionDeleteSwipeEndHandler = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.onSelectionDeleteSwipeEndHandler
             cursorSelectionToggleHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionToggleHandler?.invoke() }
             cursorSelectionEndHandler = { com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorSelectionEndHandler?.invoke() }
+            cursorSelectionModeProvider = { cursorSelectionMode }
             
             setOnQWERTYKeyListener(object : QWERTYKeyListener {
                 override fun onPressedQWERTYKey(qwertyKey: QWERTYKey) {
@@ -26009,7 +26017,87 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         refreshEditHistoryUi()
     }
 
+    private data class MultiTouchInputSnapshot(
+        val inputString: String,
+        val stringInTail: String,
+        val isHenkan: Boolean,
+        var directCommittedTextCount: Int = 0,
+        val timestamp: Long = SystemClock.uptimeMillis()
+    )
+
+    private var multiTouchSnapshot: MultiTouchInputSnapshot? = null
+
+    fun captureMultiTouchSnapshot() {
+        multiTouchSnapshot = MultiTouchInputSnapshot(
+            inputString = inputString.value,
+            stringInTail = stringInTail.get(),
+            isHenkan = isHenkan.get(),
+            directCommittedTextCount = 0
+        )
+    }
+
+    private fun rollbackPrematureInput() {
+        val snapshot = multiTouchSnapshot ?: return
+
+        try {
+            // 1. セッション中に直接コミットされた文字がある場合、deleteSurroundingText で物理消去
+            if (snapshot.directCommittedTextCount > 0) {
+                currentInputConnection?.deleteSurroundingText(snapshot.directCommittedTextCount, 0)
+                snapshot.directCommittedTextCount = 0
+            }
+
+            // 2. フリックプレビューのキャンセル
+            runCatching {
+                flickInputPreviewCoordinator.cancel(restore = false)
+            }
+
+            // 3. Composing State の復元 / 破棄
+            if (snapshot.inputString.isEmpty() && snapshot.stringInTail.isEmpty() && !snapshot.isHenkan) {
+                discardAllComposingState()
+            } else {
+                restoreComposingState(snapshot)
+            }
+
+            // 4. キーボードの長押しタイマーや内部状態を停止
+            stopAllOngoingKeyLongPresses()
+            cancelLeftLongPress()
+            cancelRightLongPress()
+            stopDeleteLongPress()
+
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to rollback premature multi-touch input")
+        } finally {
+            multiTouchSnapshot = null
+        }
+    }
+
+    private fun discardAllComposingState() {
+        _inputString.update { "" }
+        stringInTail.set("")
+        isHenkan.set(false)
+        suggestionAdapter?.updateHighlightPosition(androidx.recyclerview.widget.RecyclerView.NO_POSITION)
+
+        currentInputConnection?.let { ic ->
+            ic.setComposingText("", 0)
+            ic.finishComposingText()
+        }
+
+        resetFlagsEnterKeyNotHenkan()
+        refreshReconversionUi()
+    }
+
+    private fun restoreComposingState(snapshot: MultiTouchInputSnapshot) {
+        _inputString.update { snapshot.inputString }
+        stringInTail.set(snapshot.stringInTail)
+        isHenkan.set(snapshot.isHenkan)
+
+        val fullText = snapshot.inputString + snapshot.stringInTail
+        currentInputConnection?.setComposingText(fullText, snapshot.inputString.length)
+        refreshReconversionUi()
+    }
+
     private fun handleMultiTouchGesture(type: MultiTouchGestureType, action: KeyAction) {
+        rollbackPrematureInput()
         vibrate()
         when (action) {
             is KeyAction.UndoCommit -> performPendingReconversion()
@@ -30931,6 +31019,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         cancelCandidateTranslationIfPreEditMutates()
         val committed = connection.commitText(p0, p1)
         if (committed) {
+            multiTouchSnapshot?.let { snapshot ->
+                snapshot.directCommittedTextCount += (p0?.length ?: 0)
+            }
             clearGemmaFloating()
             cursorWrittenComposing = null
             editorMutationRevision.advance()

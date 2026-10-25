@@ -472,6 +472,25 @@ class InkTouchDispatchGestureIntegrationTest {
             child.dispatchedActions.contains(MotionEvent.ACTION_CANCEL))
     }
 
+    @Test
+    fun testOnMultiTouchSessionStartListenerFiresOnActionDown() {
+        configureActiveGestures()
+        var sessionStartInvocationCount = 0
+        root.onMultiTouchSessionStartListener = {
+            sessionStartInvocationCount++
+        }
+
+        val downTime = 1000L
+        root.dispatchTouchEvent(createMotionEvent(
+            MotionEvent.ACTION_DOWN,
+            downTime,
+            downTime,
+            listOf(0 to (400f to 400f))
+        ))
+
+        assertEquals("onMultiTouchSessionStartListener must fire on ACTION_DOWN", 1, sessionStartInvocationCount)
+    }
+
     // =========================================================================
     // Helper Mock View
     // =========================================================================

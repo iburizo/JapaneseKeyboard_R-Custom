@@ -19,6 +19,7 @@ class MultiTouchGestureDetector(
     var listener: OnMultiTouchGestureListener? = null
     var isCursorModeProvider: (() -> Boolean)? = null
     var isTouchInsideValidArea: ((x: Float, y: Float) -> Boolean)? = null
+    var onSessionStartListener: (() -> Unit)? = null
 
     // Thresholds scaled by screen density
     private val swipeMinDistance: Float = 48f * density
@@ -94,6 +95,7 @@ class MultiTouchGestureDetector(
                 if (isTouchInsideValidArea?.invoke(startX0, startY0) == false) {
                     isDiscarded = true
                 }
+                onSessionStartListener?.invoke()
                 return false
             }
 

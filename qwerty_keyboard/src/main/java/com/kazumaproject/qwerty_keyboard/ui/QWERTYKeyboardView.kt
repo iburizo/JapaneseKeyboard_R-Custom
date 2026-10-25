@@ -46,6 +46,7 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.textview.MaterialTextView
 import com.kazumaproject.core.domain.skin.KeyboardSkinId
 import com.kazumaproject.core.ui.skin.KeyboardSkinRegistry
+import com.kazumaproject.core.ui.cursor.CursorGuideOverlayRenderer
 import com.kazumaproject.core.ui.font.KeyboardFontAware
 import com.kazumaproject.core.ui.font.KeyboardFontApplicator
 import com.kazumaproject.core.ui.font.KeyboardFontGlyphDrawable
@@ -218,6 +219,14 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
     var onCursorModeChangedListener: ((Boolean) -> Unit)? = null
     private var isCursorMode: Boolean = false
+    private val cursorGuideOverlayRenderer = CursorGuideOverlayRenderer(context)
+    var cursorSelectionModeProvider: (() -> Boolean)? = null
+
+    fun isCursorGuideOverlayVisible(): Boolean = isCursorMode
+
+    fun isCursorSelectionActive(): Boolean {
+        return cursorSelectionModeProvider?.invoke() ?: false
+    }
 
     // カーソルモード中のタッチの初期位置を記録する変数
     private var cursorInitialX = 0f
@@ -1591,6 +1600,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                     val pointerId = event.getPointerId(event.actionIndex)
                     if (cursorPointerId != null && pointerId != cursorPointerId) {
                         cursorSelectionToggleHandler?.invoke()
+                        invalidate()
                     }
                     return true
                 }
@@ -2983,6 +2993,13 @@ class QWERTYKeyboardView @JvmOverloads constructor(
 
     override fun dispatchDraw(canvas: Canvas) {
         super.dispatchDraw(canvas)
+        cursorGuideOverlayRenderer.drawOverlay(
+            canvas = canvas,
+            width = width,
+            height = height,
+            isCursorMode = isCursorMode,
+            isSelectionMode = isCursorSelectionActive()
+        )
         if (glideTrailPoints.size < 2) return
         glideTrailPath.reset()
         val first = glideTrailPoints.first()
@@ -3255,6 +3272,7 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                     resources.getString(com.kazumaproject.core.R.string.space_english)
             }
         }
+        invalidate()
     }
 
     private fun setKeysForCursorMoveMode() {

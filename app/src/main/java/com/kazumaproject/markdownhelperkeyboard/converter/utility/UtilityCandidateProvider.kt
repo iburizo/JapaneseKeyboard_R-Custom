@@ -35,15 +35,17 @@ class UtilityCandidateProvider(
                 return provideFormula(formula)
             }
         }
-        val dialCandidates = DialTimeDateConverter.generateCandidates(input)
-        if (dialCandidates.isNotEmpty()) {
-            val candidates = dialCandidates.map { text ->
-                UtilityCandidate(text, UtilityCandidateKind.LITERAL)
+        if (DialTimeDateConverter.toDialNumbers(input) != null) {
+            val dialCandidates = DialTimeDateConverter.generateCandidates(input)
+            if (dialCandidates.isNotEmpty()) {
+                val candidates = dialCandidates.map { text ->
+                    UtilityCandidate(text, UtilityCandidateKind.LITERAL)
+                }
+                return UtilityCandidateResult(
+                    candidates = candidates,
+                    trigger = UtilityTrigger.NONE
+                )
             }
-            return UtilityCandidateResult(
-                candidates = candidates,
-                trigger = UtilityTrigger.NONE
-            )
         }
 
         if (containsBoundaryEquals(normalized)) return UtilityCandidateResult.Empty

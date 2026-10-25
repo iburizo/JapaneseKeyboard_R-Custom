@@ -414,4 +414,19 @@ class MultiTouchGestureDetectorTest {
 
         assertEquals("No gesture recognized for touch outside valid area", null, lastRecognizedType)
     }
+
+    @Test
+    fun testOnSessionStartListenerFiresOnActionDown() {
+        configureAllGestures()
+        var sessionStartInvocationCount = 0
+        detector.onSessionStartListener = {
+            sessionStartInvocationCount++
+        }
+
+        val downTime = 1000L
+        val evDown = createMotionEvent(MotionEvent.ACTION_DOWN, downTime, 1000L, 100f to 200f)
+        detector.onTouchEvent(evDown)
+
+        assertEquals("onSessionStartListener must fire on ACTION_DOWN", 1, sessionStartInvocationCount)
+    }
 }

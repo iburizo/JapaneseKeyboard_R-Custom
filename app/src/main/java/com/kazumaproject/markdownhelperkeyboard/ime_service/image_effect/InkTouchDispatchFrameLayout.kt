@@ -65,12 +65,16 @@ class InkTouchDispatchFrameLayout @JvmOverloads constructor(
     }
 
     var onMultiTouchGestureListener: ((MultiTouchGestureType, KeyAction) -> Unit)? = null
+    var onMultiTouchSessionStartListener: (() -> Unit)? = null
     var isCursorModeProvider: (() -> Boolean)? = null
     private var isGestureActive = false
 
     init {
         multiTouchGestureDetector.listener = OnMultiTouchGestureListener { type, action ->
             onMultiTouchGestureListener?.invoke(type, action)
+        }
+        multiTouchGestureDetector.onSessionStartListener = {
+            onMultiTouchSessionStartListener?.invoke()
         }
     }
 

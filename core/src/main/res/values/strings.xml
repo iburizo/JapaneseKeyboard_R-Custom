@@ -284,4 +284,8 @@
     <string name="enable_direct_input_mode">Direct input mode</string>
     <string name="cursor_left">Move cursor left</string>
     <string name="cursor_right">Move cursor right</string>
+
+    <!-- Cursor Mode Range Selection Guide -->
+    <string name="cursor_guide_tap_to_select">Tap to select range</string>
+    <string name="cursor_guide_selecting_range">Selecting range</string>
 </resources>
