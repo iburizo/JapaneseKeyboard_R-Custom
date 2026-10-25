@@ -16327,7 +16327,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.MoveCursorLeft -> {
                         val insertString = inputString.value
                         val suggestions = suggestionAdapter?.suggestions ?: emptyList()
-                        if (!leftCursorKeyLongKeyPressed.get()) {
+                        val isCursorSwiping = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive
+                        if (isCursorSwiping || !leftCursorKeyLongKeyPressed.get()) {
                             if (moveFocusedBunsetsuSegment(delta = -1)) {
                             } else if (isHenkan.get()) {
                                 handleDeleteKeyInHenkan(suggestions, insertString)
@@ -16342,7 +16343,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.MoveCursorRight -> {
                         val insertString = inputString.value
                         val suggestions = suggestionAdapter?.suggestions ?: emptyList()
-                        if (!rightCursorKeyLongKeyPressed.get()) {
+                        val isCursorSwiping = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive
+                        if (isCursorSwiping || !rightCursorKeyLongKeyPressed.get()) {
                             if (moveFocusedBunsetsuSegment(delta = 1)) {
                             } else if (isHenkan.get()) {
                                 handleJapaneseModeSpaceKey(
@@ -24635,7 +24637,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                         QWERTYKey.QWERTYKeyCursorLeft -> {
                             Timber.d("QWERTYKey.QWERTYKeyCursorLeft")
-                            if (!leftCursorKeyLongKeyPressed.get()) {
+                            val isCursorSwiping = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive
+                            if (isCursorSwiping || !leftCursorKeyLongKeyPressed.get()) {
                                 if (moveFocusedBunsetsuSegment(delta = -1)) {
                                     // handled by bunsetsu cursor move session
                                 } else if (isHenkan.get()) {
@@ -24651,7 +24654,8 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                         QWERTYKey.QWERTYKeyCursorRight -> {
                             Timber.d("QWERTYKey.QWERTYKeyCursorRight")
-                            if (!rightCursorKeyLongKeyPressed.get()) {
+                            val isCursorSwiping = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive
+                            if (isCursorSwiping || !rightCursorKeyLongKeyPressed.get()) {
                                 if (moveFocusedBunsetsuSegment(delta = 1)) {
                                     // handled by bunsetsu cursor move session
                                 } else if (isHenkan.get()) {
@@ -29700,13 +29704,19 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
     }
 
     private fun sendDpadLeftIfPossible() {
-        if (cursorSelectionMode && !hasCursorPreedit()) { queueCursorMove(CursorDirection.LEFT); return }
-        horizontalCursorMoveHandler.move(HorizontalCursorMoveHandler.Direction.Left)
+        if (cursorSelectionMode && !hasCursorPreedit()) {
+            queueCursorMove(CursorDirection.LEFT)
+            return
+        }
+        sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_LEFT)
     }
 
     private fun sendDpadRightIfPossible() {
-        if (cursorSelectionMode && !hasCursorPreedit()) { queueCursorMove(CursorDirection.RIGHT); return }
-        horizontalCursorMoveHandler.move(HorizontalCursorMoveHandler.Direction.Right)
+        if (cursorSelectionMode && !hasCursorPreedit()) {
+            queueCursorMove(CursorDirection.RIGHT)
+            return
+        }
+        sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_RIGHT)
     }
 
     private fun handleEmptyInputString() {

@@ -219,6 +219,7 @@ class FlickKeyboardView @JvmOverloads constructor(
 
     private var iconScalePercent: Int = 100
     private var isCursorMode: Boolean = false
+    fun isCursorMode(): Boolean = isCursorMode
     private fun updateCursorMode(enabled: Boolean) {
         isCursorMode = enabled
         com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.isCursorModeActive = enabled
@@ -454,28 +455,24 @@ class FlickKeyboardView @JvmOverloads constructor(
         val dx = currentX - cursorInitialX
         val dy = currentY - cursorInitialY
 
-        if (abs(dx) > abs(dy)) {
-            if (abs(dx) >= stepDistance) {
-                cursorSwipeMoved = true
-                val steps = (abs(dx) / stepDistance).toInt()
-                val action = if (dx < 0f) KeyAction.MoveCursorLeft else KeyAction.MoveCursorRight
-                repeat(steps) {
-                    dispatchNonTapAction(action, false)
-                }
-                cursorInitialX += if (dx < 0f) -steps * stepDistance else steps * stepDistance
-                cursorInitialY = currentY
+        if (abs(dx) >= stepDistance) {
+            cursorSwipeMoved = true
+            val steps = (abs(dx) / stepDistance).toInt()
+            val action = if (dx < 0f) KeyAction.MoveCursorLeft else KeyAction.MoveCursorRight
+            repeat(steps) {
+                dispatchNonTapAction(action, false)
             }
-        } else {
-            if (abs(dy) >= stepDistance) {
-                cursorSwipeMoved = true
-                val steps = (abs(dy) / stepDistance).toInt()
-                val action = if (dy < 0f) KeyAction.MoveCursorUp else KeyAction.MoveCursorDown
-                repeat(steps) {
-                    dispatchNonTapAction(action, false)
-                }
-                cursorInitialY += if (dy < 0f) -steps * stepDistance else steps * stepDistance
-                cursorInitialX = currentX
+            cursorInitialX += if (dx < 0f) -steps * stepDistance else steps * stepDistance
+        }
+
+        if (abs(dy) >= stepDistance) {
+            cursorSwipeMoved = true
+            val steps = (abs(dy) / stepDistance).toInt()
+            val action = if (dy < 0f) KeyAction.MoveCursorUp else KeyAction.MoveCursorDown
+            repeat(steps) {
+                dispatchNonTapAction(action, false)
             }
+            cursorInitialY += if (dy < 0f) -steps * stepDistance else steps * stepDistance
         }
     }
 
