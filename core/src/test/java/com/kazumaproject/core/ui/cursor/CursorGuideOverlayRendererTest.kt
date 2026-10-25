@@ -106,4 +106,29 @@ class CursorGuideOverlayRendererTest {
         val actualCenterX = (renderer.pillRect.left + renderer.pillRect.right) / 2f
         assertEquals(expectedCenterX, actualCenterX, 1f)
     }
+
+    @Test
+    fun testDrawOverlayWithApplicationContextDoesNotThrow() {
+        val appContext = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val appRenderer = CursorGuideOverlayRenderer(appContext)
+
+        // ApplicationContext may not have theme primary color set, but must not crash
+        appRenderer.drawOverlay(
+            canvas = canvas,
+            width = 800,
+            height = 600,
+            isCursorMode = true,
+            isSelectionMode = false
+        )
+        assertFalse("PillRect should be calculated without crashing", appRenderer.pillRect.isEmpty)
+
+        appRenderer.drawOverlay(
+            canvas = canvas,
+            width = 800,
+            height = 600,
+            isCursorMode = true,
+            isSelectionMode = true
+        )
+        assertFalse("Selection mode should also render cleanly with ApplicationContext", appRenderer.pillRect.isEmpty)
+    }
 }
