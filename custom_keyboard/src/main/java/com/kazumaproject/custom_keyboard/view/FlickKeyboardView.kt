@@ -236,6 +236,14 @@ class FlickKeyboardView @JvmOverloads constructor(
     private var pendingCursorSwipeCurrentY: Float = 0f
     private var pendingCursorSwipeIsIndependent: Boolean = false
     private var isPendingCursorSwipe: Boolean = false
+
+    private var isArrowCursorSwipeReady: Boolean = false
+    private var arrowCursorSwipePointerId: Int? = null
+    private var arrowCursorSwipeStartX: Float = 0f
+    private var arrowCursorSwipeStartY: Float = 0f
+    private var arrowCursorSwipeTarget: MotionTarget? = null
+    private var arrowCursorSwipeKeyData: KeyData? = null
+
     private val cursorSwipeHandler = Handler(Looper.getMainLooper())
     private val cursorSwipeRunnable = Runnable {
         triggerCursorSwipeMode()
@@ -289,6 +297,10 @@ class FlickKeyboardView @JvmOverloads constructor(
             pendingCursorSwipeTarget = null
             pendingCursorSwipeKeyData = null
         }
+        isArrowCursorSwipeReady = false
+        arrowCursorSwipePointerId = null
+        arrowCursorSwipeTarget = null
+        arrowCursorSwipeKeyData = null
     }
 
     private fun triggerCursorSwipeMode() {
@@ -320,6 +332,7 @@ class FlickKeyboardView @JvmOverloads constructor(
             cancelEvent.recycle()
         }
         target.view.isPressed = false
+        listener?.onLongPressActionCanceled(KeyAction.Cancel)
 
         cancelTextPreview()
         crossFlickControllers.forEach { it.dismissAllPopups() }
@@ -352,6 +365,76 @@ class FlickKeyboardView @JvmOverloads constructor(
             }
             independentTextPreviews.clear()
         }
+    }
+
+    private fun startArrowCursorSwipeMode(
+        pointerId: Int?,
+        target: MotionTarget?,
+        keyData: KeyData?,
+        startX: Float,
+        startY: Float,
+        currentX: Float,
+        currentY: Float
+    ) {
+        isArrowCursorSwipeReady = false
+        arrowCursorSwipePointerId = null
+        arrowCursorSwipeTarget = null
+        arrowCursorSwipeKeyData = null
+        cancelPendingCursorSwipe()
+
+        val eventTime = SystemClock.uptimeMillis()
+        if (target != null) {
+            val cancelEvent = MotionEvent.obtain(
+                eventTime,
+                eventTime,
+                MotionEvent.ACTION_CANCEL,
+                target.view.width / 2f,
+                target.view.height / 2f,
+                0
+            )
+            try {
+                target.view.dispatchTouchEvent(cancelEvent)
+            } finally {
+                cancelEvent.recycle()
+            }
+            target.view.isPressed = false
+        }
+
+        listener?.onLongPressActionCanceled(KeyAction.Cancel)
+
+        cancelTextPreview()
+        crossFlickControllers.forEach { it.dismissAllPopups() }
+
+        updateCursorMode(true)
+        cursorSwipeMoved = true
+        cursorPointerId = pointerId
+        longPressOwnerKeyData = keyData
+        cursorInitialX = startX
+        cursorInitialY = startY
+
+        if (pointerId != null) {
+            motionTargets.remove(pointerId)
+            pointerDownTime.remove(pointerId)
+            independentLastCoordinates.remove(pointerId)
+        }
+
+        if (independentMultiTouchForCurrentGesture) {
+            motionTargets.toList().forEach { (id, otherTarget) ->
+                motionTargets.remove(id)
+                val time = pointerDownTime.remove(id) ?: eventTime
+                val cancel = MotionEvent.obtain(time, eventTime, MotionEvent.ACTION_CANCEL, 0f, 0f, 0)
+                try {
+                    otherTarget.view.dispatchTouchEvent(cancel)
+                } finally {
+                    cancel.recycle()
+                }
+                otherTarget.view.isPressed = false
+                independentLastCoordinates.remove(id)
+            }
+            independentTextPreviews.clear()
+        }
+
+        handleCursorSwipeMove(currentX, currentY)
     }
 
     private fun handleCursorSwipeMove(currentX: Float, currentY: Float) {
@@ -3498,6 +3581,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                         }
 
                     dispatchEndEventToTrackedTargets(event, actionToDispatch)
+                    listener?.onLongPressActionCanceled(KeyAction.Cancel)
                     setCursorMode(false)
                     crossFlickControllers.forEach { it.dismissAllPopups() }
                     clearSpaceKeyPressedState()
@@ -3515,10 +3599,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                         }
 
                     dispatchEndEventToTrackedTargets(event, actionToDispatch)
-
-                    if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
-                        listener?.onLongPressActionCanceled(KeyAction.Cancel)
-                    }
+                    listener?.onLongPressActionCanceled(KeyAction.Cancel)
 
                     setCursorMode(false)
                     crossFlickControllers.forEach { it.dismissAllPopups() }
@@ -3529,6 +3610,26 @@ class FlickKeyboardView @JvmOverloads constructor(
 
                     return true
                 }
+            }
+        }
+
+        val isCursorSwipeEnabled = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorKeySwipeMoveEnableProvider?.invoke() != false
+
+        if (isCursorSwipeEnabled && !isCursorMode && isArrowCursorSwipeReady && event.actionMasked == MotionEvent.ACTION_MOVE) {
+            val dx = event.x - arrowCursorSwipeStartX
+            val dy = event.y - arrowCursorSwipeStartY
+            val threshold = 12f * resources.displayMetrics.density
+            if (kotlin.math.hypot(dx, dy) >= threshold) {
+                startArrowCursorSwipeMode(
+                    pointerId = arrowCursorSwipePointerId,
+                    target = arrowCursorSwipeTarget,
+                    keyData = arrowCursorSwipeKeyData,
+                    startX = arrowCursorSwipeStartX,
+                    startY = arrowCursorSwipeStartY,
+                    currentX = event.x,
+                    currentY = event.y
+                )
+                return true
             }
         }
 
@@ -3556,7 +3657,24 @@ class FlickKeyboardView @JvmOverloads constructor(
                     val dxFromStart = event.x - selectionDeleteInitialX
                     val dyFromStart = event.y - selectionDeleteInitialY
                     
-                    val rawDeltaX = (dxFromStart / pixelsPerCharX).toInt()
+                    val baseCharsX = (dxFromStart / pixelsPerCharX).toInt()
+                    val rawDeltaX = if (baseCharsX < 0) {
+                        val absChars = -baseCharsX
+                        val accelerated = if (absChars <= 5) {
+                            absChars
+                        } else if (absChars <= 10) {
+                            5 + (absChars - 5) * 2
+                        } else {
+                            15 + (absChars - 10) * 4
+                        }
+                        if (event.x <= 24f * resources.displayMetrics.density) {
+                            -1000
+                        } else {
+                            -accelerated
+                        }
+                    } else {
+                        baseCharsX
+                    }
                     val rawDeltaY = (dyFromStart / pixelsPerCharY).toInt()
 
                     if (rawDeltaX != lastSelectionDeltaX || rawDeltaY != lastSelectionDeltaY) {
@@ -3632,12 +3750,12 @@ class FlickKeyboardView @JvmOverloads constructor(
 
                     if (isCursorSwipeEnabled && !hasComposingFlickOverride) {
                         if (isArrowCursorKey(keyData)) {
-                            updateCursorMode(true)
-                            cursorSwipeMoved = false
-                            cursorPointerId = pointerId
-                            longPressOwnerKeyData = keyData
-                            cursorInitialX = event.x
-                            cursorInitialY = event.y
+                            isArrowCursorSwipeReady = true
+                            arrowCursorSwipePointerId = pointerId
+                            arrowCursorSwipeStartX = event.x
+                            arrowCursorSwipeStartY = event.y
+                            arrowCursorSwipeTarget = target
+                            arrowCursorSwipeKeyData = keyData
                         } else if (isNaKey(keyData)) {
                             scheduleCursorSwipeLongPress(
                                 target = target,
@@ -3871,7 +3989,7 @@ class FlickKeyboardView @JvmOverloads constructor(
                     MotionEvent.ACTION_UP
                 }
                 dispatchEndEventToTrackedTargets(event, actionToDispatch)
-                if (event.actionMasked == MotionEvent.ACTION_CANCEL) listener?.onLongPressActionCanceled(KeyAction.Cancel)
+                listener?.onLongPressActionCanceled(KeyAction.Cancel)
                 setCursorMode(false)
                 crossFlickControllers.forEach { it.dismissAllPopups() }
                 clearSpaceKeyPressedState()
@@ -3929,12 +4047,12 @@ class FlickKeyboardView @JvmOverloads constructor(
 
                 if (isCursorSwipeEnabled && !hasComposingFlickOverride) {
                     if (isArrowCursorKey(keyData)) {
-                        cursorPointerId = pointerId
-                        cursorSwipeMoved = false
-                        longPressOwnerKeyData = keyData
-                        cursorInitialX = event.displayX(index)
-                        cursorInitialY = event.displayY(index)
-                        updateCursorMode(true)
+                        isArrowCursorSwipeReady = true
+                        arrowCursorSwipePointerId = pointerId
+                        arrowCursorSwipeStartX = event.displayX(index)
+                        arrowCursorSwipeStartY = event.displayY(index)
+                        arrowCursorSwipeTarget = target
+                        arrowCursorSwipeKeyData = keyData
                     } else if (isNaKey(keyData)) {
                         scheduleCursorSwipeLongPress(
                             target = target,
@@ -3948,6 +4066,29 @@ class FlickKeyboardView @JvmOverloads constructor(
                 }
             }
             MotionEvent.ACTION_MOVE -> {
+                val isCursorSwipeEnabled = com.kazumaproject.custom_keyboard.layout.KeyboardDefaultLayouts.cursorKeySwipeMoveEnableProvider?.invoke() != false
+                if (isCursorSwipeEnabled && !isCursorMode && isArrowCursorSwipeReady) {
+                    val pIndex = arrowCursorSwipePointerId?.let(event::findPointerIndex) ?: -1
+                    if (pIndex >= 0) {
+                        val currentX = event.displayX(pIndex)
+                        val currentY = event.displayY(pIndex)
+                        val dx = currentX - arrowCursorSwipeStartX
+                        val dy = currentY - arrowCursorSwipeStartY
+                        val threshold = 12f * resources.displayMetrics.density
+                        if (kotlin.math.hypot(dx, dy) >= threshold) {
+                            startArrowCursorSwipeMode(
+                                pointerId = arrowCursorSwipePointerId,
+                                target = arrowCursorSwipeTarget,
+                                keyData = arrowCursorSwipeKeyData,
+                                startX = arrowCursorSwipeStartX,
+                                startY = arrowCursorSwipeStartY,
+                                currentX = currentX,
+                                currentY = currentY
+                            )
+                            return true
+                        }
+                    }
+                }
                 if (isPendingCursorSwipe) {
                     val pIndex = pendingCursorSwipePointerId?.let(event::findPointerIndex) ?: -1
                     if (pIndex >= 0) {
@@ -3978,7 +4119,8 @@ class FlickKeyboardView @JvmOverloads constructor(
                 }
             }
             MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP -> {
-                if (isPendingCursorSwipe && pendingCursorSwipePointerId == pointerId) {
+                if ((isPendingCursorSwipe && pendingCursorSwipePointerId == pointerId) ||
+                    (isArrowCursorSwipeReady && arrowCursorSwipePointerId == pointerId)) {
                     cancelPendingCursorSwipe()
                 }
                 val target = motionTargets.remove(pointerId)

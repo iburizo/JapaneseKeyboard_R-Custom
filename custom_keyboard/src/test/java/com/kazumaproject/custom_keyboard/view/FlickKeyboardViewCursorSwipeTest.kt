@@ -30,9 +30,11 @@ class FlickKeyboardViewCursorSwipeTest {
     private val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     private val host = FrameLayout(activity).also { activity.setContentView(it) }
     private val dispatchedActions = mutableListOf<KeyAction>()
+    private val canceledActions = mutableListOf<KeyAction>()
 
     private fun createKeyboard(independentMultiTouch: Boolean = false): FlickKeyboardView {
         dispatchedActions.clear()
+        canceledActions.clear()
         val keyboard = FlickKeyboardView(
             ContextThemeWrapper(
                 activity,
@@ -51,6 +53,9 @@ class FlickKeyboardViewCursorSwipeTest {
                 override fun onFlickDirectionChanged(direction: FlickDirection) = Unit
                 override fun onFlickActionLongPress(action: KeyAction) = Unit
                 override fun onFlickActionUpAfterLongPress(action: KeyAction, isFlick: Boolean) = Unit
+                override fun onLongPressActionCanceled(action: KeyAction) {
+                    canceledActions += action
+                }
             })
         }
         host.removeAllViews()
@@ -387,6 +392,109 @@ class FlickKeyboardViewCursorSwipeTest {
             }
         }
         return null
+    }
+
+    private fun FlickKeyboardView.isCursorMode(): Boolean {
+        val field = FlickKeyboardView::class.java.getDeclaredField("isCursorMode").apply { isAccessible = true }
+        return field.get(this) as Boolean
+    }
+
+    @Test
+    fun testTapOnArrowKeyDoesNotEnterCursorMode() {
+        val keyboard = createKeyboard()
+        val cursorButton = keyboard.findCursorButton()
+        assertNotNull("Cursor key button must exist", cursorButton)
+
+        val centerX = cursorButton!!.left + cursorButton.width / 2f
+        val centerY = cursorButton.top + cursorButton.height / 2f
+
+        val downTime = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, centerX, centerY, 0)
+        keyboard.onTouchEvent(down)
+        down.recycle()
+
+        // On ACTION_DOWN, it should NOT immediately enter cursor mode
+        assertFalse("Must not enter cursor mode immediately on ACTION_DOWN", keyboard.isCursorMode())
+
+        val upTime = downTime + 50
+        val up = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, centerX, centerY, 0)
+        keyboard.onTouchEvent(up)
+        up.recycle()
+
+        // It should still not be in cursor mode after tap release
+        assertFalse("Must not be in cursor mode after tap", keyboard.isCursorMode())
+        // And tap action must be dispatched
+        assertEquals(1, dispatchedActions.size)
+        assertTrue(
+            dispatchedActions.contains(KeyAction.MoveCursorRight) || dispatchedActions.contains(KeyAction.MoveCursorLeft)
+        )
+    }
+
+    @Test
+    fun testSwipeOnArrowKeyEntersCursorMode() {
+        val keyboard = createKeyboard()
+        val cursorButton = keyboard.findCursorButton()
+        assertNotNull("Cursor key button must exist", cursorButton)
+
+        val centerX = cursorButton!!.left + cursorButton.width / 2f
+        val centerY = cursorButton.top + cursorButton.height / 2f
+
+        val downTime = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, centerX, centerY, 0)
+        keyboard.onTouchEvent(down)
+        down.recycle()
+
+        assertFalse("Must not be in cursor mode initially", keyboard.isCursorMode())
+
+        // Move by 50px (exceeds threshold)
+        val moveTime = downTime + 50
+        val move = MotionEvent.obtain(downTime, moveTime, MotionEvent.ACTION_MOVE, centerX + 50f, centerY, 0)
+        keyboard.onTouchEvent(move)
+        move.recycle()
+
+        assertTrue("Must enter cursor mode after swipe movement", keyboard.isCursorMode())
+
+        val upTime = downTime + 100
+        val up = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, centerX + 50f, centerY, 0)
+        keyboard.onTouchEvent(up)
+        up.recycle()
+
+        assertFalse("Must exit cursor mode on release", keyboard.isCursorMode())
+    }
+
+    @Test
+    fun testSwipeOnArrowKeyCancelsLongPressAndReleasesCleanly() {
+        val keyboard = createKeyboard()
+        val cursorButton = keyboard.findCursorButton()
+        assertNotNull("Cursor key button must exist", cursorButton)
+
+        val centerX = cursorButton!!.left + cursorButton.width / 2f
+        val centerY = cursorButton.top + cursorButton.height / 2f
+
+        val downTime = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, centerX, centerY, 0)
+        keyboard.onTouchEvent(down)
+        down.recycle()
+
+        // Move by 50px (exceeds threshold)
+        val moveTime = downTime + 50
+        val move = MotionEvent.obtain(downTime, moveTime, MotionEvent.ACTION_MOVE, centerX + 50f, centerY, 0)
+        keyboard.onTouchEvent(move)
+        move.recycle()
+
+        assertTrue("Must enter cursor mode", keyboard.isCursorMode())
+        assertTrue("Cancellation action must have been sent on swipe", canceledActions.contains(KeyAction.Cancel))
+
+        canceledActions.clear()
+
+        // Release finger
+        val upTime = downTime + 100
+        val up = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, centerX + 50f, centerY, 0)
+        keyboard.onTouchEvent(up)
+        up.recycle()
+
+        assertFalse("Must exit cursor mode", keyboard.isCursorMode())
+        assertTrue("Cancellation action must be sent on cursor mode exit", canceledActions.contains(KeyAction.Cancel))
     }
 }
 

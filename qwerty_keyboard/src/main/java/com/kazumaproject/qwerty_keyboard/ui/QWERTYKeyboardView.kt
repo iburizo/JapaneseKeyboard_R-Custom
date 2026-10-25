@@ -1551,7 +1551,20 @@ class QWERTYKeyboardView @JvmOverloads constructor(
                             swipeCancelDispatched = true
                             cancelLongPressForPointer(swipePointerId)
                         }
-                        val deltaX = (dx / 40f).toInt()
+                        val baseDeltaX = (dx / 40f).toInt()
+                        val deltaX = if (baseDeltaX < 0) {
+                            val absChars = -baseDeltaX
+                            val accelerated = if (absChars <= 5) {
+                                absChars
+                            } else if (absChars <= 10) {
+                                5 + (absChars - 5) * 2
+                            } else {
+                                15 + (absChars - 10) * 4
+                            }
+                            if (currentX <= 30f) -1000 else -accelerated
+                        } else {
+                            baseDeltaX
+                        }
                         val deltaY = (dy / 40f).toInt()
                         onSelectionDeleteSwipeUpdateHandler?.invoke(deltaX, deltaY)
                         if (isDebugModeEnabled) invalidate()

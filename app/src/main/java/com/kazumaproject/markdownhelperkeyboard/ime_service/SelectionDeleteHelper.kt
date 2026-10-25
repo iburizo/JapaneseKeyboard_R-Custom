@@ -28,20 +28,38 @@ class SelectionDeleteHandler(
         
         val extracted = ic.getExtractedText(ExtractedTextRequest(), 0) ?: return
         val text = extracted.text ?: ""
+        if (text.isEmpty()) return
+
+        val anchor = selectionDeleteAnchor.coerceIn(0, text.length)
+        val lineMovedPos = moveByLines(text, anchor, deltaCharsY)
+        val newPos = (lineMovedPos + deltaCharsX).coerceIn(0, text.length)
         
-        var newPos: Int
-        
-        if (deltaCharsY > 0) {
-            val nextNewLine = text.indexOf('\n', selectionDeleteAnchor)
-            newPos = if (nextNewLine != -1) nextNewLine else text.length
-        } else if (deltaCharsY < 0) {
-            val prevNewLine = text.lastIndexOf('\n', selectionDeleteAnchor - 1)
-            newPos = if (prevNewLine != -1) prevNewLine else 0
+        ic.setSelection(newPos, anchor)
+    }
+
+    private fun moveByLines(text: CharSequence, startPos: Int, deltaLines: Int): Int {
+        if (deltaLines == 0 || text.isEmpty()) return startPos
+        var currentPos = startPos.coerceIn(0, text.length)
+        if (deltaLines < 0) {
+            repeat(-deltaLines) {
+                val prevNewLine = text.lastIndexOf('\n', (currentPos - 1).coerceAtLeast(0))
+                currentPos = if (prevNewLine == -1) {
+                    0
+                } else {
+                    prevNewLine
+                }
+            }
         } else {
-            newPos = (selectionDeleteAnchor + deltaCharsX).coerceIn(0, text.length)
+            repeat(deltaLines) {
+                val nextNewLine = text.indexOf('\n', currentPos)
+                currentPos = if (nextNewLine == -1) {
+                    text.length
+                } else {
+                    nextNewLine + 1
+                }
+            }
         }
-        
-        ic.setSelection(newPos, selectionDeleteAnchor)
+        return currentPos
     }
 
     fun onSwipeEnd() {
