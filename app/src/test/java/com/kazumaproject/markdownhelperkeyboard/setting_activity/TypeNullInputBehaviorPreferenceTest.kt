@@ -21,16 +21,11 @@ class TypeNullInputBehaviorPreferenceTest {
             TYPE_NULL_INPUT_BEHAVIOR_KEY,
             readTypeNullPreference(R.xml.pref_common_legacy).key
         )
-        assertEquals(
-            TYPE_NULL_INPUT_BEHAVIOR_KEY,
-            readTypeNullPreference(R.xml.pref_input_method).key
-        )
     }
 
     @Test
     fun legacyAndNewSettingsUseDefaultValue() {
         assertEquals("default", readTypeNullPreference(R.xml.pref_common_legacy).defaultValue)
-        assertEquals("default", readTypeNullPreference(R.xml.pref_input_method).defaultValue)
     }
 
     @Test

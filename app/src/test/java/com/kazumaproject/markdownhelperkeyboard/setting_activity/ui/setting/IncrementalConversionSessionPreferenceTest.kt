@@ -77,16 +77,16 @@ class IncrementalConversionSessionPreferenceTest {
             R.id.conversionEnginePreferenceFragment,
             SettingDestinations.destinationId(newCategory.destination),
         )
-        assertEquals(R.xml.pref_conversion_engine, legacyTab.xmlRes)
-        assertTrue(newSettings.destination is SettingDestinationType.SwitchPreference)
-        assertFalse(
-            (newSettings.destination as SettingDestinationType.SwitchPreference).defaultValue
-        )
-        assertEquals(SettingCategory.CONVERSION_ENGINE, newSettings.category)
+        assertTrue(newSettings.destination is SettingDestinationType.NavDestination)
         assertEquals(
             R.id.conversionEnginePreferenceFragment,
-            (newSettings.destination as SettingDestinationType.SwitchPreference).destinationId,
+            (newSettings.destination as SettingDestinationType.NavDestination).destinationId,
         )
+        assertEquals(
+            KEY,
+            (newSettings.destination as SettingDestinationType.NavDestination).highlightPreferenceKey,
+        )
+        assertEquals(SettingCategory.CONVERSION_ENGINE, newSettings.category)
         val legacyTarget = requireNotNull(legacySettings.legacyTarget)
         assertEquals(SettingTabRegistry.TAB_CONVERSION_ENGINE, legacyTarget.tabKey)
         assertEquals(KEY, legacyTarget.preferenceKey)

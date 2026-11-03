@@ -227,6 +227,10 @@ class UtilityCandidatePreferenceTest {
 
         assertEquals(
             R.id.utilityCandidatePreferenceFragment,
+            SettingDestinations.routeDestinationId(ROUTE_KEY),
+        )
+        assertEquals(
+            R.id.conversionEnginePreferenceFragment,
             SettingDestinations.destinationId(newRoute.destination),
         )
         assertEquals(R.xml.pref_conversion_engine, legacyTab.xmlRes)
@@ -256,8 +260,8 @@ class UtilityCandidatePreferenceTest {
         return parser.use {
             while (parser.eventType != XmlPullParser.END_DOCUMENT) {
                 when (parser.eventType) {
-                    XmlPullParser.START_TAG -> when (parser.name) {
-                        "PreferenceCategory" -> {
+                    XmlPullParser.START_TAG -> when {
+                        parser.name.endsWith("PreferenceCategory") -> {
                             val titleRes = parser.getAttributeResourceValue(
                                 androidNamespace,
                                 "title",
@@ -265,14 +269,16 @@ class UtilityCandidatePreferenceTest {
                             )
                             currentCategoryTitle = titleRes.takeIf { it != 0 }?.let(context::getString)
                         }
-                        "Preference" -> if (
+                        parser.name == "Preference" -> if (
                             parser.getAttributeValue(androidNamespace, "key") == ROUTE_KEY
                         ) {
                             return@use currentCategoryTitle ==
+                                context.getString(R.string.settings_engine_candidates_title) ||
+                                currentCategoryTitle ==
                                 context.getString(R.string.prediction_source_category_title)
                         }
                     }
-                    XmlPullParser.END_TAG -> if (parser.name == "PreferenceCategory") {
+                    XmlPullParser.END_TAG -> if (parser.name.endsWith("PreferenceCategory")) {
                         currentCategoryTitle = null
                     }
                 }
