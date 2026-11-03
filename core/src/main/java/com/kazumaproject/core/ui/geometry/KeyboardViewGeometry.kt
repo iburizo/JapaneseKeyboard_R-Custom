@@ -57,7 +57,14 @@ object KeyboardViewGeometry {
         val width = owner.width.toFloat()
         val height = owner.height.toFloat()
         if (visible.isEmpty() || width <= 0f || height <= 0f) return KeyboardGeometryResult(0f, baselineHeight)
-        val safe = geometry.normalized()
+        val safe = if (qwerty) {
+            geometry.normalized()
+        } else {
+            geometry.copy(
+                splitPercent = geometry.splitPercent.coerceIn(0, KeyboardGeometry.MAX_SPLIT_PERCENT),
+                curveDegrees = geometry.curveDegrees.coerceIn(0, KeyboardGeometry.MAX_CURVE_DEGREES)
+            )
+        }
         if (safe.isDefault) {
             reset(items)
             return KeyboardGeometryResult(0f, baselineHeight)

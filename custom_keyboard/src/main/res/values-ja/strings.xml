@@ -63,4 +63,5 @@
     <string name="action_ctrl">Ctrl</string>
     <string name="action_alt">Alt</string>
     <string name="modifier_locked">%1$s ロック中</string>
+    <string name="action_show_clipboard_history">クリップボード履歴</string>
 </resources>

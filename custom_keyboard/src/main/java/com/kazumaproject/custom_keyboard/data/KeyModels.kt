@@ -81,6 +81,7 @@ sealed class KeyAction {
     data object Cut : KeyAction()
     data object Paste : KeyAction()
     data object Copy : KeyAction()
+    data object ShowClipboardHistory : KeyAction()
 
     // UI変更系
     data object ChangeInputMode : KeyAction()

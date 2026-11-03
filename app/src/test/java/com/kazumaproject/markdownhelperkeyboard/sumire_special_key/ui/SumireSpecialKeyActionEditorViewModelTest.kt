@@ -75,6 +75,7 @@ class SumireSpecialKeyActionEditorViewModelTest {
         viewModel.setKeyAction(SumireSpecialKeyDirection.RIGHT, KeyAction.Enter)
         viewModel.setKeyAction(SumireSpecialKeyDirection.DOWN, KeyAction.Paste)
         viewModel.setKeyAction(SumireSpecialKeyDirection.LEFT, KeyAction.Copy)
+        viewModel.setKeyAction(SumireSpecialKeyDirection.LONG_PRESS, KeyAction.ShowClipboardHistory)
         advanceUntilIdle()
 
         assertTrue(repository.upserts.isEmpty())
@@ -84,11 +85,11 @@ class SumireSpecialKeyActionEditorViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            listOf("TAP", "UP", "RIGHT", "DOWN", "LEFT"),
+            listOf("TAP", "UP", "RIGHT", "DOWN", "LEFT", "LONG_PRESS"),
             repository.upserts.map { it.direction }
         )
         assertEquals(
-            listOf("Delete", "Space", "Enter", "Paste", "Copy"),
+            listOf("Delete", "Space", "Enter", "Paste", "Copy", "ShowClipboardHistory"),
             repository.upserts.map { it.actionString }
         )
         val composingDirections = SumireSpecialKeyDirection.entries.filter { it.name.endsWith("_COMPOSING") }

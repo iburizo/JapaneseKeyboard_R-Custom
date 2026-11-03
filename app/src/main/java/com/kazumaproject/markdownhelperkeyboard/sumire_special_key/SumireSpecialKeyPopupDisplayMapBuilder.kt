@@ -63,6 +63,7 @@ object SumireSpecialKeyPopupDisplayMapBuilder {
                 add(FlickDirection.UP_LEFT_FAR)
                 if (FlickDirection.UP_LEFT in existingKeys) add(FlickDirection.UP_LEFT)
             }
+            SumireSpecialKeyDirection.LONG_PRESS, SumireSpecialKeyDirection.LONG_PRESS_COMPOSING -> emptyList()
         }
     }
 }

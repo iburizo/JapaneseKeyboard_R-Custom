@@ -10,7 +10,9 @@ enum class SumireSpecialKeyDirection {
     UP_COMPOSING,
     RIGHT_COMPOSING,
     DOWN_COMPOSING,
-    LEFT_COMPOSING
+    LEFT_COMPOSING,
+    LONG_PRESS,
+    LONG_PRESS_COMPOSING
 }
 
 sealed class ResolvedSumireSpecialKeyAction {

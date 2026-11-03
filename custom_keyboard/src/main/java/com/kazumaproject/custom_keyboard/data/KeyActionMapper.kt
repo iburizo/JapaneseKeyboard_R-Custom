@@ -118,6 +118,11 @@ object KeyActionMapper {
                 com.kazumaproject.core.R.drawable.content_copy_24dp
             ),
             DisplayAction(
+                KeyAction.ShowClipboardHistory,
+                context.getString(R.string.action_show_clipboard_history),
+                com.kazumaproject.core.R.drawable.content_paste_24px
+            ),
+            DisplayAction(
                 KeyAction.SwitchToNextIme,
                 context.getString(R.string.action_switch_to_next_ime),
                 com.kazumaproject.core.R.drawable.language_24dp
@@ -259,6 +264,7 @@ object KeyActionMapper {
             KeyAction.Cut -> com.kazumaproject.core.R.drawable.content_cut_24dp
             KeyAction.Paste -> com.kazumaproject.core.R.drawable.content_paste_24px
             KeyAction.Copy -> com.kazumaproject.core.R.drawable.content_copy_24dp
+            KeyAction.ShowClipboardHistory -> com.kazumaproject.core.R.drawable.content_paste_24px
             KeyAction.SwitchToNextIme -> com.kazumaproject.core.R.drawable.language_24dp
             KeyAction.ShowEmojiKeyboard -> com.kazumaproject.core.R.drawable.baseline_emoji_emotions_24
             KeyAction.ToggleDakuten,
@@ -331,6 +337,7 @@ object KeyActionMapper {
             is KeyAction.Cut -> "Cut"
             is KeyAction.Paste -> "Paste"
             is KeyAction.Copy -> "Copy"
+            is KeyAction.ShowClipboardHistory -> "ShowClipboardHistory"
             is KeyAction.ChangeInputMode -> "ChangeInputMode"
             is KeyAction.ShowEmojiKeyboard -> "^_^"
             is KeyAction.SwitchToNextIme -> "SwitchToNextIme"
@@ -411,6 +418,7 @@ object KeyActionMapper {
             "Cut" -> KeyAction.Cut
             "Paste" -> KeyAction.Paste
             "Copy" -> KeyAction.Copy
+            "ShowClipboardHistory", "ClipboardHistory" -> KeyAction.ShowClipboardHistory
             "ChangeInputMode" -> KeyAction.ChangeInputMode
             "^_^" -> KeyAction.ShowEmojiKeyboard
             "SwitchToNextIme" -> KeyAction.SwitchToNextIme

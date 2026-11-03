@@ -132,6 +132,8 @@ class SumireSpecialKeyActionEditorFragment :
             SumireSpecialKeyDirection.RIGHT_COMPOSING -> "右フリック (入力中)"
             SumireSpecialKeyDirection.DOWN_COMPOSING -> "下フリック (入力中)"
             SumireSpecialKeyDirection.LEFT_COMPOSING -> "左フリック (入力中)"
+            SumireSpecialKeyDirection.LONG_PRESS -> "長押し (通常)"
+            SumireSpecialKeyDirection.LONG_PRESS_COMPOSING -> "長押し (入力中)"
         }
     }
 
@@ -186,6 +188,8 @@ class SumireSpecialKeyActionEditorFragment :
             SumireSpecialKeyDirection.RIGHT_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_right) + " (入力中)"
             SumireSpecialKeyDirection.DOWN_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_down) + " (入力中)"
             SumireSpecialKeyDirection.LEFT_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_left) + " (入力中)"
+            SumireSpecialKeyDirection.LONG_PRESS -> getString(R.string.sumire_special_key_dialog_title_long_press)
+            SumireSpecialKeyDirection.LONG_PRESS_COMPOSING -> getString(R.string.sumire_special_key_dialog_title_long_press) + " (入力中)"
         }
     }
 

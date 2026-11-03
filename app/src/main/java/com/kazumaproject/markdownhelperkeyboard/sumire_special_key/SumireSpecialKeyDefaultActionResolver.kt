@@ -55,6 +55,7 @@ object SumireSpecialKeyDefaultActionResolver {
                 FlickDirection.UP_LEFT_FAR,
                 FlickDirection.UP_LEFT
             )
+            SumireSpecialKeyDirection.LONG_PRESS, SumireSpecialKeyDirection.LONG_PRESS_COMPOSING -> emptyList()
         }
     }
 }

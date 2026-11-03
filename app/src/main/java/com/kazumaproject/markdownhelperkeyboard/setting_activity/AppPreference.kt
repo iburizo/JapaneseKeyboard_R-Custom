@@ -207,7 +207,7 @@ object AppPreference {
         CircularFlickDirection.SLOT_6
     )
 
-    private val CLIPBOARD_HISTORY_ENABLE = Pair("clipboard_history_preference", false)
+    private val CLIPBOARD_HISTORY_ENABLE = Pair("clipboard_history_preference", true)
     private val TIME_SAME_PRONOUNCE_TYPING = Pair("time_same_pronounce_typing_preference", 1000)
     private val FLICK_SENSITIVITY = Pair(FLICK_SENSITIVITY_KEY, 100)
     private val FLICK_THRESHOLD_SHAPE = Pair(
@@ -1320,7 +1320,7 @@ object AppPreference {
             CLIPBOARD_HISTORY_ENABLE.first, CLIPBOARD_HISTORY_ENABLE.second
         )
         set(value) = preferences.edit {
-            it.putBoolean(CLIPBOARD_HISTORY_ENABLE.first, value ?: false)
+            it.putBoolean(CLIPBOARD_HISTORY_ENABLE.first, value ?: CLIPBOARD_HISTORY_ENABLE.second)
         }
 
     var custom_keyboard_two_words_output: Boolean?

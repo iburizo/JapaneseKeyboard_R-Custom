@@ -288,4 +288,7 @@
     <!-- Cursor Mode Range Selection Guide -->
     <string name="cursor_guide_tap_to_select">Tap to select range</string>
     <string name="cursor_guide_selecting_range">Selecting range</string>
+
+    <string name="key_action_show_clipboard_history">Clipboard History</string>
+    <string name="sumire_special_key_dialog_title_long_press">Long Press</string>
 </resources>

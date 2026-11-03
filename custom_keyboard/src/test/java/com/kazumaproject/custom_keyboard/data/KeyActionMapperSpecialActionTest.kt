@@ -18,6 +18,7 @@ class KeyActionMapperSpecialActionTest {
             KeyAction.MoveCursorUp to "MoveCursorUp",
             KeyAction.MoveCursorDown to "MoveCursorDown",
             KeyAction.Cut to "Cut",
+            KeyAction.ShowClipboardHistory to "ShowClipboardHistory",
             KeyAction.SelectAll to "SelectAll",
             KeyAction.UndoCommit to "UndoCommit",
             KeyAction.Undo to "Undo",

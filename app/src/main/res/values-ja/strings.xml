@@ -1487,6 +1487,7 @@
     <string name="sumire_special_key_dialog_title_right">右フリックのアクションを選択</string>
     <string name="sumire_special_key_dialog_title_down">下フリックのアクションを選択</string>
     <string name="sumire_special_key_dialog_title_left">左フリックのアクションを選択</string>
+    <string name="sumire_special_key_dialog_title_long_press">長押しのアクションを選択</string>
     <string name="sumire_special_key_none">何もしない</string>
     <string name="sumire_special_key_input_text">文字を入力</string>
     <string name="sumire_special_key_key_action">特殊アクション</string>
@@ -1983,6 +1984,7 @@ ABC abc 0123456789　ＡＢＣ　１２３４５
     <string name="multitouch_gesture_action_hide_keyboard">キーボードを閉じる</string>
     <string name="multitouch_gesture_action_space">空白 (Space)</string>
     <string name="multitouch_gesture_action_delete">削除 (Delete)</string>
+    <string name="multitouch_gesture_action_clipboard_history">クリップボード履歴</string>
 
     <string name="input_style_three_stage">3段フリック</string>
     <string name="template_three_stage_flick">かな（3段フリック）</string>

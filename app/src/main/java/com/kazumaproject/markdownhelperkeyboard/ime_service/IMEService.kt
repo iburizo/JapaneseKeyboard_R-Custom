@@ -3408,7 +3408,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
         clipboardManager =
             applicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboardManager.addPrimaryClipChangedListener(clipboardListener)
-        isClipboardHistoryFeatureEnabled = appPreference.clipboard_history_enable ?: false
+        isClipboardHistoryFeatureEnabled = appPreference.clipboard_history_enable ?: true
         cleanupExpiredClipboardItemsIfNeeded()
 
         inputManager = getSystemService(Context.INPUT_SERVICE) as InputManager
@@ -15868,6 +15868,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     }
 
                     KeyAction.Paste -> {}
+                    KeyAction.ShowClipboardHistory -> {
+                        showClipboardHistoryKeyboard()
+                    }
                     KeyAction.SelectAll -> {}
                     KeyAction.SelectLeft -> {}
                     KeyAction.SelectRight -> {}
@@ -16004,6 +16007,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                     KeyAction.NewLine -> {}
                     KeyAction.Paste -> {}
+                    KeyAction.ShowClipboardHistory -> {}
                     KeyAction.SelectAll -> {}
                     KeyAction.SelectLeft -> {}
                     KeyAction.SelectRight -> {}
@@ -16179,6 +16183,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                     KeyAction.Paste -> {
                         pasteAction()
                     }
+                    KeyAction.ShowClipboardHistory -> {
+                        showClipboardHistoryKeyboard()
+                    }
 
                     KeyAction.SelectAll -> {
                         selectAllText()
@@ -16351,6 +16358,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                     KeyAction.NewLine -> {}
                     KeyAction.Paste -> {}
+                    KeyAction.ShowClipboardHistory -> {}
                     KeyAction.SelectAll -> {}
                     KeyAction.SelectLeft -> {}
                     KeyAction.SelectRight -> {}
@@ -16943,6 +16951,9 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
 
                     KeyAction.Paste -> {
                         pasteAction()
+                    }
+                    KeyAction.ShowClipboardHistory -> {
+                        showClipboardHistoryKeyboard()
                     }
 
                     KeyAction.SelectAll -> {
@@ -17751,6 +17762,20 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             clearDeletedBufferWithoutResetLayout()
             refreshEditHistoryUi()
         }
+    }
+
+    /**
+     * クリップボード履歴画面（通常表示）を開く。
+     */
+    fun showClipboardHistoryKeyboard() {
+        vibrate()
+        _keyboardSymbolViewState.value = SymbolKeyboardState(
+            isShown = true,
+            mode = SymbolMode.CLIPBOARD
+        )
+        stringInTail.set("")
+        finishComposingText()
+        setComposingText("", 0)
     }
 
     private fun cutAction() {
@@ -25498,6 +25523,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             setOnImageItemClickListener { bitmap -> pasteImageAction(bitmap) }
             setOnClipboardItemClickListener { item ->
                 pasteClipboardHistoryItem(item)
+                _keyboardSymbolViewState.value = SymbolKeyboardState(isShown = false)
             }
             setOnClipboardItemLongClickListener { item, action ->
                 handleClipboardHistoryItemAction(item, action)
@@ -25580,6 +25606,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             setOnImageItemClickListener { bitmap -> pasteImageAction(bitmap) }
             setOnClipboardItemClickListener { item ->
                 pasteClipboardHistoryItem(item)
+                _keyboardSymbolViewState.value = SymbolKeyboardState(isShown = false)
             }
             setOnClipboardItemLongClickListener { item, action ->
                 handleClipboardHistoryItemAction(item, action)
@@ -27341,6 +27368,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
                 is KeyAction.Copy -> copyAction()
                 is KeyAction.Cut -> cutAction()
                 is KeyAction.Paste -> pasteAction()
+                is KeyAction.ShowClipboardHistory -> showClipboardHistoryKeyboard()
                 is KeyAction.HideKeyboard -> requestHideSelf(0)
                 is KeyAction.Enter, is KeyAction.NewLine, is KeyAction.Confirm -> {
                     mainLayoutBinding?.let { binding ->
@@ -27379,6 +27407,7 @@ class IMEService : InputMethodService(), LifecycleOwner, InputConnection,
             "copy" -> KeyAction.Copy
             "cut" -> KeyAction.Cut
             "paste" -> KeyAction.Paste
+            "clipboard_history", "ClipboardHistory", "ShowClipboardHistory" -> KeyAction.ShowClipboardHistory
             "hide_keyboard" -> KeyAction.HideKeyboard
             "enter" -> KeyAction.Enter
             "space" -> KeyAction.Space

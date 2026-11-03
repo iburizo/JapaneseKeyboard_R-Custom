@@ -495,7 +495,10 @@ class FlickKeyboardView @JvmOverloads constructor(
     private var lastRequiredGeometryHeight = 0
 
     fun setSumireGeometry(value: KeyboardGeometry, baseHeightPx: Int = 0, onRequiredHeight: ((Int) -> Unit)? = null) {
-        val next = value.copy(splitPercent = 0).normalized()
+        val next = value.copy(
+            splitPercent = 0,
+            curveDegrees = value.curveDegrees.coerceIn(0, KeyboardGeometry.MAX_CURVE_DEGREES)
+        )
         if ((geometry.isDefault && next.isDefault) || (geometry == next && geometryBaseHeight == baseHeightPx)) {
             geometry = next
             geometryBaseHeight = baseHeightPx
@@ -2247,10 +2250,11 @@ class FlickKeyboardView @JvmOverloads constructor(
                             }
 
                             override fun onFlickLongPress(action: KeyAction) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     doubleTapActionDispatcher.interrupt()
                                     longPressOwnerKeyData = keyData
-                                    this@FlickKeyboardView.listener?.onFlickActionLongPress(action)
+                                    this@FlickKeyboardView.listener?.onFlickActionLongPress(targetAction)
                                 }
                             }
 
@@ -2258,10 +2262,11 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 action: KeyAction,
                                 isFlick: Boolean
                             ) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     doubleTapActionDispatcher.interrupt()
                                     this@FlickKeyboardView.listener?.onFlickActionUpAfterLongPress(
-                                        action, isFlick = isFlick
+                                        targetAction, isFlick = isFlick
                                     )
                                 }
                             }
@@ -2270,9 +2275,10 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 action: KeyAction,
                                 direction: FlickDirection
                             ) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     this@FlickKeyboardView.listener?.onLongPressActionCanceled(
-                                        action
+                                        targetAction
                                     )
                                 }
                             }
@@ -2632,10 +2638,11 @@ class FlickKeyboardView @JvmOverloads constructor(
                             override fun onCanceled() = cancelTextPreview(keyData)
 
                             override fun onFlickLongPress(action: KeyAction) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     doubleTapActionDispatcher.interrupt()
                                     longPressOwnerKeyData = keyData
-                                    this@FlickKeyboardView.listener?.onFlickActionLongPress(action)
+                                    this@FlickKeyboardView.listener?.onFlickActionLongPress(targetAction)
                                 }
                             }
 
@@ -2643,10 +2650,11 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 action: KeyAction,
                                 isFlick: Boolean
                             ) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     doubleTapActionDispatcher.interrupt()
                                     this@FlickKeyboardView.listener?.onFlickActionUpAfterLongPress(
-                                        action,
+                                        targetAction,
                                         isFlick
                                     )
                                 }
@@ -2656,9 +2664,10 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 action: KeyAction,
                                 direction: FlickDirection
                             ) {
-                                if (action !is KeyAction.Text) {
+                                val targetAction = resolveSumireSpecialKeyLongPressAction(keyData) ?: action
+                                if (targetAction !is KeyAction.Text && targetAction !is KeyAction.DoNothing) {
                                     this@FlickKeyboardView.listener?.onLongPressActionCanceled(
-                                        action
+                                        targetAction
                                     )
                                 }
                             }
@@ -2802,22 +2811,28 @@ class FlickKeyboardView @JvmOverloads constructor(
                                 override fun onLongPress() {
                                     doubleTapActionDispatcher.interrupt()
                                     longPressOwnerKeyData = keyData
-                                    this@FlickKeyboardView.listener?.onActionLongPress(
-                                        currentAction()
-                                    )
+                                    val action = resolveSumireSpecialKeyLongPressAction(keyData)
+                                        ?: currentAction()
+                                    if (action !is KeyAction.DoNothing) {
+                                        this@FlickKeyboardView.listener?.onActionLongPress(action)
+                                    }
                                 }
 
                                 override fun onUpAfterLongPress() {
                                     doubleTapActionDispatcher.interrupt()
-                                    this@FlickKeyboardView.listener?.onActionUpAfterLongPress(
-                                        currentAction()
-                                    )
+                                    val action = resolveSumireSpecialKeyLongPressAction(keyData)
+                                        ?: currentAction()
+                                    if (action !is KeyAction.DoNothing) {
+                                        this@FlickKeyboardView.listener?.onActionUpAfterLongPress(action)
+                                    }
                                 }
 
                                 override fun onLongPressCanceled() {
-                                    this@FlickKeyboardView.listener?.onLongPressActionCanceled(
-                                        currentAction()
-                                    )
+                                    val action = resolveSumireSpecialKeyLongPressAction(keyData)
+                                        ?: currentAction()
+                                    if (action !is KeyAction.DoNothing) {
+                                        this@FlickKeyboardView.listener?.onLongPressActionCanceled(action)
+                                    }
                                 }
                             }
                         )
@@ -3189,6 +3204,24 @@ class FlickKeyboardView @JvmOverloads constructor(
             ?: return ResolvedSumireSpecialKeyAction.Default
 
         return resolver(layoutType, inputMode, keyData, direction)
+    }
+
+    private fun resolveSumireSpecialKeyLongPressAction(
+        keyData: KeyData
+    ): KeyAction? {
+        if (!keyData.isSpecialKey || keyData.keyId.isNullOrBlank()) return null
+        val isComposing = isComposingActiveProvider?.invoke() == true
+        val direction = if (isComposing) {
+            SumireSpecialKeyDirection.LONG_PRESS_COMPOSING
+        } else {
+            SumireSpecialKeyDirection.LONG_PRESS
+        }
+        return when (val resolved = resolveSumireSpecialKeyOverride(keyData, direction)) {
+            is ResolvedSumireSpecialKeyAction.Action -> resolved.action
+            is ResolvedSumireSpecialKeyAction.InputText -> KeyAction.Text(resolved.text)
+            is ResolvedSumireSpecialKeyAction.None -> KeyAction.DoNothing
+            is ResolvedSumireSpecialKeyAction.Default -> null
+        }
     }
 
     private fun dispatchCommittedKeyAction(
