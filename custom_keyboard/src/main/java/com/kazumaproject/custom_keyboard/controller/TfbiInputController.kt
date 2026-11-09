@@ -401,6 +401,12 @@ class TfbiInputController(
         baseDirection: TfbiFlickDirection,
         showPetals: Boolean
     ) {
+        val config = currentGestureConfig()
+        if (showPetals && !config.showLongPressPopup) {
+            guidePopupHost.dismiss()
+            return
+        }
+        if (!showPetals && !config.showFlickPopup) return
         if (popupPresentationMode == TfbiPopupPresentationMode.GUIDE_ABOVE_KEY) {
             showGuidePopup(anchorView, baseDirection, showPetals)
         } else {
